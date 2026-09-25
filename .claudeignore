@@ -1,0 +1,32 @@
+# Dependencies, build outputs and caches
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+.cache/
+
+# Local files and logs
+*.log
+.env
+.env.*
+!.env.example
+*.local
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Personal assistant and local AI configuration
+.claude/
+.cursor/
+CLAUDE.md
+
+# Generated reports and temporary exports
+coverage/
+tmp/
+temp/
+*.log

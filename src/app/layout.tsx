@@ -1,18 +1,29 @@
-import type { Metadata } from "next";
-import { LanguageProvider } from "@/contexts/LanguageContext";
+import type { Metadata, Viewport } from "next";
+import { Figtree } from "next/font/google";
+import { LanguageProvider } from "@/providers/LanguageProvider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
+const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
+
 export const metadata: Metadata = {
-  title: "VitaMind - Mental Wellness Management",
-  description: "Comprehensive mental health management platform",
+  title: { default: "VitaMind Psy", template: "%s | VitaMind Psy" },
+  description: "Clinical workspace for psychologists and psychiatrists.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="en" className={figtree.variable} suppressHydrationWarning>
+      <body className="bg-white antialiased">
         <LanguageProvider>
           {children}
+          <Toaster richColors position="top-right" />
         </LanguageProvider>
       </body>
     </html>

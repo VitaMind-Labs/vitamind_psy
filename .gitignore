@@ -1,9 +1,26 @@
 node_modules/
 .next/
 out/
+build/
 dist/
+
+# Local environment and secrets
 .env
 .env.local
 .env.*.local
+*.local
+
+# TypeScript and tooling caches
 *.tsbuildinfo
 next-env.d.ts
+
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Personal AI assistant configuration
+.claude/
+CLAUDE.md
+.cursor/
