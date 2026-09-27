@@ -1,167 +1,467 @@
-# VitaMind Psy
+# VitaMind Psy 🧠
 
-VitaMind Psy is the psychologist-facing web application in the VitaMind platform. It provides a focused workspace for managing patients, clinical sessions, assessments, notes, progress, reports, alerts, and practice-level insights.
+### The Psychologist Workspace of the VitaMind Mental Health Platform
 
-The application is designed to support mental-health professionals with structured clinical workflows. It is a professional aid and does not replace clinical judgment, emergency services, or a formal diagnosis.
+**VitaMind Psy** is the psychologist-facing web application of the **VitaMind** platform. It provides a structured digital workspace for mental-health professionals to manage patients, clinical sessions, assessments, notes, progress, reports, alerts, and practice-level insights.
 
-## Features
+The application is designed to connect **clinical workflows, patient information, psychological assessments, and AI-assisted insights** within a unified professional environment.
 
-- Secure sign-in and sign-up screens
-- Practice dashboard with overview metrics and clinical alerts
-- Patient directory and patient profiles
-- Session management and session details
-- Clinical assessments with individual assessment views
-- Structured clinical notes and patient journal workflows
-- Progress tracking with charts and life-chart views
-- Weekly reports and report details
-- Coverage and clinical orientation views
-- Notifications center
-- Settings and psychologist profile actions
-- Responsive sidebar navigation and mobile layouts
-- Shared UI primitives based on Radix UI and shadcn/ui patterns
-- Type-safe API helpers and feature-oriented application modules
+> **VitaMind Psy is a clinical support platform. It does not replace psychologists, psychiatrists, emergency services, or formal clinical diagnosis.**
 
-## Technology
+---
 
-- Next.js 16 with the App Router
-- React 19
-- TypeScript 5
-- Tailwind CSS 4
-- Radix UI and shadcn/ui components
-- Framer Motion for selected motion interactions
-- Recharts for clinical and progress visualizations
-- React Hook Form and Zod for form handling and validation
-- Lucide React for icons
-- ESLint with the Next.js configuration
+# 🧩 What VitaMind Psy Provides
 
-## Requirements
+The application brings multiple clinical workflows together in one workspace.
 
-- Node.js 20 or newer
-- npm 10 or newer
-- Access to the VitaMind API when using live data
+###  Patient Management
 
-## Getting Started
+Psychologists can access:
 
-From the `vitamind_psy` directory:
+* Patient directory
+* Patient profiles
+* Patient clinical information
+* Patient history
+* Patient-related activities and records
+
+### Session Management
+
+The platform provides tools for organizing and reviewing clinical sessions, including:
+
+* Session management
+* Session details
+* Session-related information
+* Clinical follow-up
+
+###  Clinical Notes
+
+Psychologists can work with structured clinical notes and patient journal workflows to maintain organized records throughout the patient's follow-up.
+
+###  Assessments
+
+The assessment workspace provides access to:
+
+* Assessment lists
+* Individual assessment views
+* Structured assessment information
+* Assessment-related patient data
+
+###  Progress Tracking
+
+VitaMind Psy provides visual tools for following patient progress, including:
+
+* Progress charts
+* Life-chart views
+* Longitudinal observations
+* Patient development over time
+
+### Reports
+
+Psychologists can access:
+
+* Weekly reports
+* Report details
+* Clinical summaries
+* Practice-level insights
+
+###  Alerts & Notifications
+
+The platform includes:
+
+* Clinical alerts
+* Notifications center
+* Patient-related notifications
+* Practice monitoring
+
+###  Practice-Level Insights
+
+The dashboard provides an overview of the practice with metrics and clinical alerts designed to help psychologists monitor their overall activity.
+
+---
+
+#  AI & VitaMind Psy
+
+VitaMind Psy is designed to become the **professional interface for VitaMind's AI-assisted mental-health ecosystem**.
+
+One of the core AI components being developed within VitaMind is **Mira**, an Arabic conversational assessment agent.
+
+
+#  Architecture
+
+VitaMind Psy follows a feature-oriented Next.js architecture.
+
+```text
+                    ┌──────────────────────┐
+                    │      Next.js App     │
+                    │      App Router      │
+                    └──────────┬───────────┘
+                               │
+                ┌──────────────┼──────────────┐
+                │              │              │
+                ▼              ▼              ▼
+           UI Components    Features       Providers
+                │              │
+                │              ├── Patients
+                │              ├── Sessions
+                │              ├── Assessments
+                │              ├── Reports
+                │              ├── Dashboard
+                │              └── Auth
+                │
+                └──────────────┬──────────────┘
+                               │
+                               ▼
+                         API Boundary
+                               │
+                               ▼
+                      VitaMind Backend API
+```
+
+The frontend API boundary is organized under:
+
+```text
+src/lib/api/
+```
+
+Psychologist-facing API operations are implemented through:
+
+```text
+src/lib/api/psychologist.ts
+```
+
+Feature actions and hooks consume this API boundary rather than embedding request details directly inside presentation components.
+
+---
+
+# 🛠️ Technology Stack
+
+| Technology          | Purpose                              |
+| ------------------- | ------------------------------------ |
+| **Next.js 16**      | Full-stack React framework           |
+| **React 19**        | User interface                       |
+| **TypeScript 5**    | Type-safe development                |
+| **Tailwind CSS 4**  | Styling                              |
+| **Radix UI**        | Accessible UI primitives             |
+| **shadcn/ui**       | Reusable interface patterns          |
+| **Framer Motion**   | Motion interactions                  |
+| **Recharts**        | Clinical and progress visualizations |
+| **React Hook Form** | Form management                      |
+| **Zod**             | Validation                           |
+| **Lucide React**    | Icons                                |
+| **ESLint**          | Code quality                         |
+
+---
+
+#  Project Structure
+
+```text
+vitamind_psy/
+│
+├── src/
+│   ├── app/
+│   │   └── Next.js routes, layouts,
+│   │       loading and error states
+│   │
+│   ├── components/
+│   │   └── Shared layout and UI components
+│   │
+│   ├── features/
+│   │   ├── assessments/
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── patients/
+│   │   ├── reports/
+│   │   ├── sessions/
+│   │   └── ...
+│   │
+│   ├── hooks/
+│   │   └── Reusable React hooks
+│   │
+│   ├── lib/
+│   │   ├── api/
+│   │   ├── domain types
+│   │   └── shared utilities
+│   │
+│   ├── providers/
+│   │   └── Application-level providers
+│   │
+│   └── types/
+│       └── Shared TypeScript types
+│
+├── public/
+│   └── Static assets and application logo
+│
+├── package.json
+├── tsconfig.json
+├── next.config.*
+├── .env.local
+└── README.md
+```
+
+Feature modules generally keep their actions, components, hooks, and supporting logic close to the feature they serve.
+
+**Server Components are preferred by default**, while Client Components are used where browser interactivity or React hooks are required.
+
+---
+
+# 🗺️ Main Routes
+
+| Route                      | Purpose                    |
+| -------------------------- | -------------------------- |
+| `/signin`                  | Authentication             |
+| `/signup`                  | Account creation           |
+| `/dashboard`               | Practice overview          |
+| `/dashboard/patients`      | Patient directory          |
+| `/dashboard/patients/:id`  | Patient clinical workspace |
+| `/dashboard/sessions`      | Session management         |
+| `/dashboard/assessments`   | Assessment management      |
+| `/dashboard/reports`       | Weekly reports             |
+| `/dashboard/notes`         | Clinical notes             |
+| `/dashboard/progress`      | Progress tracking          |
+| `/dashboard/alerts`        | Clinical alerts            |
+| `/dashboard/notifications` | Notifications              |
+| `/dashboard/coverage`      | Clinical coverage          |
+| `/dashboard/settings`      | Application settings       |
+
+---
+
+# ⚙️ Requirements
+
+Before running VitaMind Psy locally, make sure you have:
+
+* **Node.js 20+**
+* **npm 10+**
+* Access to the **VitaMind API** when working with live data
+
+---
+
+# 🚀 Getting Started
+
+Clone the repository:
+
+```bash
+git clone https://github.com/VitaMind-Labs/vitamind_psy.git
+cd vitamind_psy
+```
+
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Start the development server:
+
+```bash
 npm run dev
 ```
 
-The development server runs on [http://localhost:3005](http://localhost:3005).
+The application runs on:
 
-To create an optimized production build and serve it locally:
+```text
+http://localhost:3005
+```
+
+---
+
+# 🔧 Environment Variables
+
+Create a `.env.local` file in the project root when a custom API endpoint is required:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+```
+
+If `NEXT_PUBLIC_API_URL` is not defined, the application defaults to:
+
+```text
+http://localhost:5000
+```
+
+###  Security
+
+Never commit:
+
+```text
+.env
+.env.local
+credentials
+API keys
+access tokens
+private certificates
+patient information
+```
+
+to the repository.
+
+---
+
+#  Available Scripts
+
+| Command         | Description                                  |
+| --------------- | -------------------------------------------- |
+| `npm run dev`   | Starts the development server on port `3005` |
+| `npm run build` | Creates an optimized production build        |
+| `npm run start` | Serves the production build                  |
+| `npm run lint`  | Runs ESLint                                  |
+
+For a production build:
 
 ```bash
 npm run build
 npm run start
 ```
 
-The application uses the Next.js App Router and the source code is located in `src/`.
+---
 
-## Environment Variables
+#  API Integration
 
-Create a local `.env.local` file when a custom API endpoint is required:
+The frontend communicates with the VitaMind backend through a dedicated API boundary.
+
+```text
+src/lib/api/
+```
+
+Psychologist-specific operations are organized in:
+
+```text
+src/lib/api/psychologist.ts
+```
+
+The API URL is configured through:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-`NEXT_PUBLIC_API_URL` defaults to `http://localhost:5000` when it is not defined. Never commit `.env`, `.env.local`, credentials, access tokens, or other secrets.
+This separation keeps backend communication independent from the presentation layer and allows feature modules to consume typed API operations.
 
-## Available Scripts
+---
 
-| Script | Description |
-| --- | --- |
-| `npm run dev` | Starts the development server on port 3005 using Webpack |
-| `npm run build` | Creates an optimized production build |
-| `npm run start` | Serves the production build |
-| `npm run lint` | Runs ESLint |
+# 🧪 Quality & Development Workflow
 
-## Project Structure
-
-```text
-src/
-├── app/             Next.js routes, layouts, loading and error states
-├── components/      Shared layout and UI components
-├── features/        Feature modules grouped by clinical workflow
-│   ├── assessments/
-│   ├── auth/
-│   ├── dashboard/
-│   ├── patients/
-│   ├── reports/
-│   ├── sessions/
-│   └── ...
-├── hooks/           Reusable React hooks
-├── lib/             API clients, domain types and shared utilities
-├── providers/       Application-level context providers
-└── types/           Shared TypeScript types
-public/              Static assets such as the application logo
-```
-
-Feature modules generally keep their actions, components, hooks, and supporting logic close to the feature they serve. Server Components are preferred by default; client components are used where browser interactivity or hooks are required.
-
-## Main Routes
-
-- `/signin` - Authentication entry point
-- `/signup` - Account creation
-- `/dashboard` - Practice overview
-- `/dashboard/patients` - Patient directory
-- `/dashboard/patients/:id` - Patient profile and clinical workspace
-- `/dashboard/sessions` - Session management
-- `/dashboard/assessments` - Assessment list
-- `/dashboard/reports` - Weekly reports
-- `/dashboard/notes` - Clinical notes workspace
-- `/dashboard/progress` - Progress tracking
-- `/dashboard/alerts` - Clinical alerts
-- `/dashboard/notifications` - Notifications
-- `/dashboard/coverage` - Clinical coverage view
-- `/dashboard/settings` - Application settings
-
-## API Integration
-
-The frontend API boundary is organized under `src/lib/api/`, with psychologist-facing operations implemented in `src/lib/api/psychologist.ts`. Feature actions and hooks consume this boundary instead of embedding request details in presentation components.
-
-The backend URL is configured through `NEXT_PUBLIC_API_URL`. Make sure the API is running and that the configured origin accepts requests from the frontend during local development.
-
-## Quality Checks
-
-Before opening a pull request, run the checks relevant to your change:
+Before opening a pull request:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-For UI changes, verify the affected route at both desktop and mobile widths. For API or data-flow changes, confirm loading, empty, error, and authenticated states.
+For UI changes:
 
-## Clinical and Security Considerations
+* Test the affected route.
+* Verify desktop layouts.
+* Verify mobile layouts.
+* Check loading states.
+* Check empty states.
+* Check error states.
+* Check authenticated states.
 
-- VitaMind Psy is a clinical support interface, not an autonomous diagnostic system.
-- Do not use real patient information in local development, screenshots, fixtures, or pull requests.
-- Keep personally identifiable information and protected health information out of logs and client-side telemetry.
-- Treat API responses as untrusted input and preserve the existing validation and error-handling boundaries.
-- Report security or privacy concerns privately to the project maintainers rather than opening a public issue with sensitive details.
+For API or data-flow changes:
 
-## Contribution Workflow
+* Verify request handling.
+* Verify loading behavior.
+* Verify error handling.
+* Verify empty responses.
+* Verify authentication boundaries.
+
+---
+
+#  Clinical & Security Considerations
+
+VitaMind Psy handles workflows related to sensitive mental-health information.
+
+Therefore:
+
+* VitaMind Psy is a **clinical support interface**, not an autonomous diagnostic system.
+* Clinical decisions remain under the responsibility of qualified professionals.
+* Do not use real patient information in local development.
+* Do not include patient information in screenshots, fixtures, tests, or pull requests.
+* Keep personally identifiable information and protected health information out of logs and client-side telemetry.
+* Treat API responses as untrusted input.
+* Preserve existing validation and error-handling boundaries.
+* Do not expose credentials or private API keys.
+* Security and privacy vulnerabilities should be reported privately to project maintainers.
+
+---
+
+#  Future Direction
+
+VitaMind Psy is being developed as part of a larger AI-assisted mental-health ecosystem.
+
+Future capabilities may include:
+
+###  AI-Assisted Clinical Insights
+
+AI systems could help organize information collected throughout the VitaMind platform and present structured insights to professionals.
+
+### Psychological Assessment Integration
+
+Assessment data can be organized into the psychologist's clinical workspace to facilitate professional review.
+
+### Longitudinal Patient Monitoring
+
+Patient progress, assessments, sessions, and observations can be brought together to provide a longitudinal view.
+
+### Patient–Psychologist Continuity
+
+Information gathered through VitaMind's patient-facing experiences can support the professional workflow while keeping clinical decisions with the psychologist.
+
+###  Arabic Mental-Health AI
+
+VitaMind's AI layer, including **Mira**, is being developed with Arabic-language interaction as an important component of the platform.
+
+---
+
+
+---
+
+#  Contribution Workflow
 
 1. Create a focused branch from the current development branch.
 2. Keep changes scoped to the relevant feature or shared boundary.
-3. Run lint and build checks before requesting review.
-4. Include a concise description of behavior changes and validation performed.
-5. Do not commit local IDE settings, Claude configuration, environment files, secrets, or generated build output.
+3. Follow the existing feature-oriented architecture.
+4. Run lint and build checks before requesting review.
+5. Describe behavior changes clearly.
+6. Include validation performed.
+7. Never commit secrets, credentials, patient information, or generated build output.
 
-The intended integration target for this workspace is `origin/dev`. The prepared commit workflow is:
+The intended integration target for this workspace is:
+
+```text
+origin/dev
+```
+
+Example commit workflow:
 
 ```bash
 git add README.md .gitignore .claudeignore
-git commit -m "docs: document VitaMind Psy and repository hygiene"
+git commit -m "docs: update VitaMind Psy documentation"
 git push origin HEAD:dev
 ```
 
-These commands are documentation only and have not been executed as part of this update.
+These commands are examples and should only be executed after reviewing the changes locally.
 
-## License
+---
 
-No public license has been declared for this project. Treat the codebase as proprietary unless the project owners state otherwise.
+#  Project Status
+
+**VitaMind Psy is under active development.**
+
+The current application provides the psychologist-facing foundation of the VitaMind ecosystem, while AI-assisted assessment and other intelligent capabilities are being developed as part of the broader platform.
+
+---
+
+# 📄 License
+
+No public license has currently been declared for this project.
+
+Unless the project owners explicitly state otherwise, treat the source code as **proprietary** and do not assume permission to reproduce, distribute, or commercially use it.
+
+---
+
+## VitaMind Labs
+
+**Building human-centered AI for mental health.**
+
+**VitaMind Psy** — *Connecting psychological care, intelligent technology, and professional insight.*
