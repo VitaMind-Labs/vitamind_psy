@@ -1,4 +1,4 @@
-# VitaMind Psy 🧠
+# VitaMind Psy 
 
 ### The Psychologist Workspace of the VitaMind Mental Health Platform
 
@@ -10,7 +10,7 @@ The application is designed to connect **clinical workflows, patient information
 
 ---
 
-# 🧩 What VitaMind Psy Provides
+#  What VitaMind Psy Provides
 
 The application brings multiple clinical workflows together in one workspace.
 
