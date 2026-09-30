@@ -8,7 +8,6 @@ import { format, formatDistanceStrict, formatDistanceToNowStrict } from "date-fn
 import { toast } from "sonner";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { CalendarPlus, Check, CheckCircle2, ChevronDown, ChevronRight, Clock3, Inbox, PhoneCall, RotateCcw, Search, ShieldCheck, XCircle } from "lucide-react";
-import { API_BASE } from "@/lib/api/config";
 import type { AlertResolution, AlertStatus, ClinicalAlert, PaginatedResponse, RiskLevel } from "@/lib/api/psychologist";
 import { acknowledgeAlertAction, proposeSessionAction, resolveAlertAction } from "@/features/dashboard/actions/clinical";
 import { Badge } from "@/components/ui/badge";
@@ -73,33 +72,19 @@ export function AlertsCenter({ initialData, initialStatus = "ALL" }: { initialDa
     setAlerts(initialData.data);
   }
 
+  // Alerts are fetched server-side only: refresh the server data on an interval and toast new high-severity alerts.
   useEffect(() => {
     const timer = window.setInterval(() => router.refresh(), 30000);
-    let source: EventSource | null = null;
-    try {
-      source = new EventSource(`${API_BASE}/v1/psychologist/stream`, { withCredentials: true });
-      source.onmessage = (event) => {
-        try {
-          const payload = JSON.parse(event.data) as { alerts?: ClinicalAlert[] };
-          const fresh = (payload.alerts ?? []).filter((alert) => !seenAlerts.current.has(alert.id));
-          if (fresh.length === 0) return;
-          fresh.forEach((alert) => {
-            seenAlerts.current.add(alert.id);
-            toast.warning(`${RISK_META[alert.severity].label} · ${alert.title}`);
-          });
-          router.refresh();
-        } catch {
-          /* ignore malformed frames */
-        }
-      };
-    } catch {
-      /* SSE unsupported — polling covers it */
-    }
-    return () => {
-      window.clearInterval(timer);
-      source?.close();
-    };
+    return () => window.clearInterval(timer);
   }, [router]);
+
+  useEffect(() => {
+    const fresh = initialData.data.filter((alert) => !seenAlerts.current.has(alert.id));
+    fresh.forEach((alert) => {
+      seenAlerts.current.add(alert.id);
+      if (alert.severity === "HIGH" || alert.severity === "CRITICAL") toast.warning(`${RISK_META[alert.severity].label} · ${alert.title}`);
+    });
+  }, [initialData]);
 
   const updateAlert = useCallback(
     (id: string, update: Partial<ClinicalAlert>) => setAlerts((current) => current.map((item) => (item.id === id ? { ...item, ...update } : item))),

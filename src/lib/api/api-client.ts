@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { API_BASE, TOKEN_COOKIE, REFRESH_TOKEN_COOKIE, AUTH_ENDPOINTS } from "@/lib/api/config";
 import { ApiError } from "@/lib/api/errors";
+import { ACCESS_COOKIE_OPTIONS, REFRESH_COOKIE_OPTIONS, refreshSession } from "@/lib/api/refresh";
 
 interface BackendResponse<T> {
   success: boolean;
@@ -102,23 +103,8 @@ function unwrapResponseData<T>(payload: unknown): T | null {
 
 export async function setAuthCookies(accessToken: string, refreshToken?: string) {
   const store = await getCookieStore();
-  store.set(TOKEN_COOKIE, accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 15 * 60, // 15 min
-  });
-
-  if (refreshToken) {
-    store.set(REFRESH_TOKEN_COOKIE, refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-    });
-  }
+  store.set(TOKEN_COOKIE, accessToken, ACCESS_COOKIE_OPTIONS);
+  if (refreshToken) store.set(REFRESH_TOKEN_COOKIE, refreshToken, REFRESH_COOKIE_OPTIONS);
 }
 
 export async function clearAuthCookies() {
@@ -133,25 +119,17 @@ async function refreshAccessToken(): Promise<string | null> {
     const refreshToken = store.get(REFRESH_TOKEN_COOKIE)?.value;
     if (!refreshToken) return null;
 
-    const res = await fetch(`${API_BASE}${AUTH_ENDPOINTS.REFRESH}`, {
-      method: "POST",
-      headers: {
-        Cookie: `${REFRESH_TOKEN_COOKIE}=${refreshToken}`,
-      },
-      cache: "no-store",
-    });
+    const session = await refreshSession(refreshToken);
+    if (!session) return null;
 
-    const payload = await parseResponseBody(res);
-    if (!res.ok) {
-      return null;
+    // Persist the rotated pair where cookies are writable (server actions / route handlers).
+    // During a Server Component render they are read-only; the route proxy refreshes those requests.
+    try {
+      await setAuthCookies(session.accessToken, session.refreshToken);
+    } catch {
+      // read-only cookie store
     }
-
-    const tokens = unwrapResponseData<{ access_token: string }>(payload);
-    if (!tokens?.access_token) {
-      return null;
-    }
-
-    return tokens.access_token;
+    return session.accessToken;
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Logo3D } from "@/components/shared/Logo3D";
 import { Activity, Fingerprint, Lock, LockKeyhole, ScrollText, ShieldCheck } from "lucide-react";
 
 const FEATURES = [
@@ -46,7 +47,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <BrandMark />
         </div>
 
-        <div className="relative max-w-md space-y-8">
+        <div className="relative flex flex-1 items-center justify-center py-6">
+          <Logo3D size={300} />
+        </div>
+
+        <div className="relative max-w-md space-y-6">
           <div className="space-y-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-white/70 backdrop-blur">
               <Activity size={14} aria-hidden className="text-[#d9a51a]" />
@@ -117,7 +122,12 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </span>
         </header>
 
-        <main className="relative flex flex-1 items-center justify-center py-10">{children}</main>
+        <main className="relative flex flex-1 flex-col items-center justify-center gap-4 py-10">
+          <div className="lg:hidden">
+            <Logo3D size={112} />
+          </div>
+          {children}
+        </main>
 
         <footer className="relative flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
           <span className="flex items-center gap-1.5">

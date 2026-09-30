@@ -385,7 +385,7 @@ export function PatientProfile(props: PatientProfileProps) {
             <TabsContent value="relapse" className="mt-5"><RelapseSignaturesPanel patientId={id} initialSignatures={relapseSignatures} /></TabsContent>
             <TabsContent value="consent" className="mt-5"><ConsentPanel consent={consent} /></TabsContent>
             <TabsContent value="messages" className="mt-5"><MessagesPanel patientId={id} initialMessages={messages} /></TabsContent>
-            <TabsContent value="timeline" className="mt-5"><TimelinePanel events={timeline} /></TabsContent>
+            <TabsContent value="timeline" className="mt-5"><TimelinePanel patientId={id} events={timeline} /></TabsContent>
             <TabsContent value="care-plan" className="mt-5"><CarePlanPanel patientId={id} initialExercises={exercises} initialGoals={goals} exerciseCatalog={exerciseCatalog} /></TabsContent>
             <TabsContent value="diagnosis" className="mt-5"><DiagnosisPanel patientId={id} initialDiagnoses={diagnoses} canEdit={profileRole === "PSYCHIATRIST"} /></TabsContent>
             <TabsContent value="notes" className="mt-5"><NotesPanel patientId={id} initialNotes={notes} /></TabsContent>
