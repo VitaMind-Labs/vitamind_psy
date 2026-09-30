@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, useReducedMotion } from "framer-motion";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { ArrowLeft, ArrowRight, KeyRound, Lock, Mail, Smartphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, Smartphone } from "lucide-react";
 import { loginPsychologist, verifyPsychologist2fa } from "@/features/auth/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,21 +117,18 @@ export default function AuthScreen() {
       initial={reduceMotion ? false : { opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="w-full max-w-[400px] space-y-6 rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-lg backdrop-blur-md sm:p-8"
+      className="w-full max-w-[380px] space-y-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm sm:p-8"
     >
       {step === "credentials" && (
         <>
-          <header className="space-y-2.5">
-            <p className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500">
-              Clinician · Secure sign in
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Welcome back</h1>
-            <p className="text-sm text-slate-600">Access your secure clinical workspace.</p>
+          <header className="space-y-1.5">
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900">Sign in</h1>
+            <p className="text-sm text-slate-600">Use your clinician account.</p>
           </header>
 
           <form onSubmit={onSubmit} noValidate className="space-y-4">
             <AuthField
-              label="Work email"
+              label="Email"
               type="email"
               autoComplete="email"
               inputMode="email"
@@ -162,12 +159,6 @@ export default function AuthScreen() {
               {!isSubmitting && <ArrowRight size={16} aria-hidden className="transition-transform group-hover:translate-x-0.5" />}
             </Button>
           </form>
-
-          <p className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2.5 text-xs leading-5 text-slate-500">
-            <KeyRound size={14} aria-hidden className="mt-px shrink-0" />
-            Clinician accounts stay pending until your license is verified. Contact your clinic administrator if you
-            can&apos;t sign in.
-          </p>
 
           <p className="text-center text-xs text-slate-500">
             Forgot your password? Contact your clinic administrator.

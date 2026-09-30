@@ -144,7 +144,7 @@ export function PsyTwoFactorSetup({
           const done = i < step;
           const active = i === step;
           return (
-            <li key={label} className="flex min-w-0 flex-1 items-center gap-2 last:flex-none">
+            <li key={label} className={cn("flex min-w-0 items-center gap-2", i < STEPS.length - 1 ? "flex-1" : "flex-none")}>
               <span
                 className={cn(
                   "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
@@ -155,7 +155,7 @@ export function PsyTwoFactorSetup({
               >
                 {done ? <Check size={12} strokeWidth={3} aria-hidden /> : i + 1}
               </span>
-              <span className={cn("truncate text-xs", active ? "font-semibold text-slate-900" : "text-slate-500")}>
+              <span className={cn("whitespace-nowrap text-xs", active ? "font-semibold text-slate-900" : "sr-only")}>
                 {label}
               </span>
               {i < STEPS.length - 1 && <span className={cn("h-px min-w-4 flex-1", done || active ? "bg-slate-900" : "bg-slate-200")} aria-hidden />}
@@ -181,7 +181,7 @@ export function PsyTwoFactorSetup({
             ) : (
               <span aria-label="Loading QR code" className="size-36 shrink-0 animate-pulse rounded-lg bg-slate-200/70" />
             )}
-            <div className="min-w-0 space-y-1.5 text-center sm:text-left">
+            <div className="w-full min-w-0 flex-1 space-y-1.5 text-center sm:text-left">
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500 sm:justify-start">
                 <KeyRound size={14} aria-hidden /> Or enter this key manually
               </p>
@@ -192,7 +192,7 @@ export function PsyTwoFactorSetup({
                   title="Copy setup key"
                   className="inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-mono text-xs text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-900"
                 >
-                  <span className="truncate">{enrollment.secret}</span>
+                  <span className="break-all text-left">{enrollment.secret}</span>
                   {keyCopied ? <Check size={14} aria-hidden className="shrink-0 text-emerald-600" /> : <Copy size={14} aria-hidden className="shrink-0" />}
                 </button>
               ) : (
