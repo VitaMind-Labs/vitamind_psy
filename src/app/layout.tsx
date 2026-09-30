@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree } from "next/font/google";
-import { LanguageProvider } from "@/providers/LanguageProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -26,10 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={figtree.variable} suppressHydrationWarning>
       <body className="bg-white antialiased">
-        <LanguageProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </LanguageProvider>
+        {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

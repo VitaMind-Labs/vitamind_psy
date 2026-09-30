@@ -23,6 +23,7 @@ import {
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
+import { SidebarClock } from "@/components/layout/SidebarClock";
 import { useSidebar } from "@/providers/SidebarProvider";
 import { logoutPsychologist } from "@/features/auth/actions/auth";
 import type { ClinicianRole, PsychologistProfile } from "@/lib/api/psychologist";
@@ -233,6 +234,8 @@ export function Sidebar({ profile, counts, variant = "rail" }: SidebarProps) {
 
         {/* Footer */}
         <div className="shrink-0 space-y-2 p-3">
+          <SidebarClock compact={collapsed} />
+
           {showTriage && !collapsed && (
             <Link
               href="/dashboard/alerts?status=OPEN"

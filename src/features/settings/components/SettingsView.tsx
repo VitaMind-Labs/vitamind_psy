@@ -21,7 +21,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
 import { Panel } from "@/components/layout/Kpi";
 import { ROLE_LABELS } from "@/components/layout/Sidebar";
-import { useLanguage, type Language } from "@/providers/LanguageProvider";
 import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/utils";
 
@@ -181,35 +180,8 @@ function ProfileTab({ profile }: { profile: PsychologistProfile }) {
 }
 
 function PreferencesTab({ profile }: { profile: PsychologistProfile }) {
-  const { language, setLanguage } = useLanguage();
-  const options: Array<{ value: Language; label: string }> = [
-    { value: "en", label: "English" },
-    { value: "fr", label: "Français" },
-  ];
-
   return (
     <div className="grid max-w-3xl gap-4">
-      <Panel title="Interface language" description="Stored on this device.">
-        <div role="radiogroup" aria-label="Interface language" className="grid gap-2 sm:grid-cols-2">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={language === option.value}
-              onClick={() => setLanguage(option.value)}
-              className={cn(
-                "flex cursor-pointer items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-colors",
-                language === option.value ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200 hover:border-slate-300",
-              )}
-            >
-              <span className="flex items-center gap-2.5"><Globe size={15} aria-hidden className="text-slate-500" /> {option.label}</span>
-              {language === option.value && <Check size={15} aria-hidden className="text-teal-700" />}
-            </button>
-          ))}
-        </div>
-      </Panel>
-
       <Panel title="Clinical notifications" description="Delivery rules agreed during onboarding.">
         <ul className="divide-y divide-slate-100">
           <SettingRow
@@ -294,7 +266,7 @@ function SecurityTab({ profile }: { profile: PsychologistProfile }) {
       </Panel>
 
       <Dialog open={enrolling} onOpenChange={setEnrolling}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="max-w-md gap-4 overflow-x-hidden p-5 sm:p-6">
           <DialogTitle className="sr-only">Enable two-factor authentication</DialogTitle>
           <DialogDescription className="sr-only">
             Enrol an authenticator app and save your recovery codes.

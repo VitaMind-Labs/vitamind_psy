@@ -15,7 +15,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { useSidebar } from "@/providers/SidebarProvider";
 import { CommandPalette, useCommandPaletteShortcut } from "@/features/dashboard/components/command-palette";
 import type { PsychologistNotification, PsychologistProfile } from "@/lib/api/psychologist";
@@ -74,7 +73,7 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
           <Menu size={18} aria-hidden />
         </Button>
 
-        <nav aria-label="Breadcrumb" className="min-w-0">
+        <nav aria-label="Breadcrumb" className="min-w-0 shrink-0 max-w-[30%] sm:max-w-none">
           <ol className="flex items-center gap-1.5 text-sm">
             <li className="hidden text-slate-500 sm:block">
               <Link href="/dashboard/overview" className="transition-colors hover:text-slate-900">Workspace</Link>
@@ -96,24 +95,27 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
           </ol>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="flex min-w-0 flex-1 justify-center">
           <button
             type="button"
             onClick={openPalette}
             aria-label="Search pages and patients"
-            className="hidden h-8 w-56 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 text-[13px] text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-500 md:flex lg:w-64"
+            className="hidden h-9 w-full max-w-md cursor-pointer items-center gap-2.5 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 transition-colors hover:border-slate-300 hover:bg-white sm:flex"
           >
-            <Search size={14} aria-hidden />
-            <span className="flex-1 text-left">Search pages, patients…</span>
-            <kbd className="rounded border border-slate-200 bg-white px-1 font-sans text-[10px] font-medium text-slate-500">
+            <Search size={15} aria-hidden className="shrink-0 text-slate-400" />
+            <span className="flex-1 truncate text-left">Search pages, patients…</span>
+            <kbd className="shrink-0 rounded border border-slate-200 bg-white px-1.5 py-0.5 font-sans text-[10px] font-medium text-slate-500">
               Ctrl K
             </kbd>
           </button>
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:ml-0">
           <button
             type="button"
             onClick={openPalette}
             aria-label="Search"
-            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 md:hidden"
+            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 sm:hidden"
           >
             <Search size={16} aria-hidden />
           </button>
@@ -132,8 +134,6 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
           )}
 
           <span aria-hidden className="mx-1 hidden h-5 w-px bg-slate-200 sm:block" />
-
-          <LanguageSwitcher />
 
           <DropdownMenu>
             <DropdownMenuTrigger
