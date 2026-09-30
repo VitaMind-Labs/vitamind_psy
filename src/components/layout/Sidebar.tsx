@@ -147,18 +147,19 @@ export function Sidebar({ profile, counts, variant = "rail" }: SidebarProps) {
           <Link
             href="/dashboard/overview"
             onClick={closeMobile}
-            aria-label="VitaMind Psy overview"
-            className={cn("flex min-w-0 items-center gap-2.5 rounded-lg p-1 transition-colors hover:bg-slate-200/50", !collapsed && "flex-1")}
+            aria-label="Dashboard overview"
+            className={cn("flex min-w-0 items-center justify-center gap-2.5 rounded-lg p-1 transition-colors hover:bg-slate-200/50", !collapsed && "flex-1")}
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 shadow-sm">
-              <Image src="/logo.png" alt="" width={18} height={18} priority />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-transparent">
+              <Image
+                src="/logo.svg"
+                alt="VitaMind"
+                width={44}
+                height={44}
+                className="h-11 w-11 bg-transparent object-contain"
+                priority
+              />
             </span>
-            {!collapsed && (
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate text-[13px] font-semibold text-slate-900">{profile.clinic?.name ?? "VitaMind Psy"}</span>
-                <span className="block truncate text-[11px] text-slate-500">Clinical workspace</span>
-              </span>
-            )}
           </Link>
           {!collapsed && variant === "rail" && (
             <button

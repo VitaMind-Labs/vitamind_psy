@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { formatDistanceToNowStrict } from "date-fns";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LanguageSwitcher } from "@/components/shared/LanguageSwitcher";
 import { useSidebar } from "@/providers/SidebarProvider";
+import { CommandPalette, useCommandPaletteShortcut } from "@/features/dashboard/components/command-palette";
 import type { PsychologistNotification, PsychologistProfile } from "@/lib/api/psychologist";
 import { cn } from "@/lib/utils";
 
@@ -59,30 +60,12 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
   const pathname = usePathname();
   const router = useRouter();
   const { toggle } = useSidebar();
-  const [query, setQuery] = useState("");
-  const searchRef = useRef<HTMLInputElement>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  useCommandPaletteShortcut(openPalette);
   const isCoordinator = profile.role === "CARE_COORDINATOR";
   const recent = notifications.slice(0, 6);
   const crumbs = breadcrumbs(pathname);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchRef.current?.focus();
-        searchRef.current?.select();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const value = query.trim();
-    router.push(value ? `/dashboard/patients?search=${encodeURIComponent(value)}` : "/dashboard/patients");
-    searchRef.current?.blur();
-  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-md md:rounded-t-2xl">
@@ -114,23 +97,26 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5">
-          {!isCoordinator && (
-            <form onSubmit={handleSearch} role="search" className="relative hidden md:block">
-              <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                ref={searchRef}
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search patients"
-                aria-label="Search patients"
-                className="h-8 w-56 rounded-lg border border-slate-200 bg-slate-50/80 pl-8 pr-12 text-[13px] text-slate-900 outline-none transition-all placeholder:text-slate-400 hover:border-slate-300 focus:w-72 focus:border-teal-600 focus:bg-white focus:ring-2 focus:ring-teal-600/15 lg:w-64"
-              />
-              <kbd className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 rounded border border-slate-200 bg-white px-1 font-sans text-[10px] font-medium text-slate-500">
-                Ctrl K
-              </kbd>
-            </form>
-          )}
+          <button
+            type="button"
+            onClick={openPalette}
+            aria-label="Search pages and patients"
+            className="hidden h-8 w-56 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 text-[13px] text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-500 md:flex lg:w-64"
+          >
+            <Search size={14} aria-hidden />
+            <span className="flex-1 text-left">Search pages, patients…</span>
+            <kbd className="rounded border border-slate-200 bg-white px-1 font-sans text-[10px] font-medium text-slate-500">
+              Ctrl K
+            </kbd>
+          </button>
+          <button
+            type="button"
+            onClick={openPalette}
+            aria-label="Search"
+            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 md:hidden"
+          >
+            <Search size={16} aria-hidden />
+          </button>
 
           {openAlertCount > 0 && !isCoordinator && (
             <Link
@@ -215,6 +201,7 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
           </DropdownMenu>
         </div>
       </div>
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} role={profile.role} />
     </header>
   );
 }
