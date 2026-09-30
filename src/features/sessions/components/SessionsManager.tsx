@@ -319,7 +319,7 @@ export function SessionsManager({ initialSessions, patients }: { initialSessions
                               <Link href={`/dashboard/patients/${session.patientId}?tab=sessions`} className="block truncate text-sm font-medium text-slate-900 hover:text-teal-700 hover:underline">
                                 {session.patientName}
                               </Link>
-                              <p className="truncate text-xs text-slate-500">{TYPE_LABEL[session.type] ?? session.type} session</p>
+                              <Link href={`/dashboard/sessions/${session.id}`} className="block truncate text-xs text-slate-500 hover:text-teal-700 hover:underline">{TYPE_LABEL[session.type] ?? session.type} session · details</Link>
                             </div>
                             <Badge variant={overdue ? "warning" : STATUS_META[session.status].variant} className="hidden sm:inline-flex">
                               {overdue ? "Needs closure" : STATUS_META[session.status].label}
