@@ -10,10 +10,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { updatePsychologistProfile } from "@/features/settings/actions/settings";
 import { logoutPsychologist } from "@/features/auth/actions/auth";
+import { PsyTwoFactorSetup } from "@/features/auth/components/PsyTwoFactorSetup";
 import type { PsychologistProfile } from "@/lib/api/psychologist";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger, underlineTabsList, underlineTabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
@@ -230,6 +232,7 @@ function PreferencesTab({ profile }: { profile: PsychologistProfile }) {
 function SecurityTab({ profile }: { profile: PsychologistProfile }) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
   const now = useNow();
   const license = profile.license;
   const expires = license?.expiresAt ? new Date(license.expiresAt) : null;
@@ -270,12 +273,44 @@ function SecurityTab({ profile }: { profile: PsychologistProfile }) {
         <ul className="divide-y divide-slate-100">
           <SettingRow title="Password" description="Password changes are handled by your clinic administrator." value={<KeyRound size={16} aria-hidden className="text-slate-400" />} />
           <SettingRow
+            title="Two-factor authentication"
+            description={profile.is2FAEnabled ? "An authenticator code is required at every sign-in." : "Add an authenticator code to every sign-in."}
+            value={
+              profile.is2FAEnabled ? (
+                <Badge variant="success" dot>Enabled</Badge>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={() => setEnrolling(true)}>
+                  <ShieldCheck size={14} aria-hidden /> Enable 2FA
+                </Button>
+              )
+            }
+          />
+          <SettingRow
             title="Sign out of this device"
             description="Ends your session and clears secure cookies."
             value={<Button size="sm" variant="secondary" loading={signingOut} onClick={() => void signOut()}>{!signingOut && <LogOut size={14} aria-hidden />} Sign out</Button>}
           />
         </ul>
       </Panel>
+
+      <Dialog open={enrolling} onOpenChange={setEnrolling}>
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle className="sr-only">Enable two-factor authentication</DialogTitle>
+          <DialogDescription className="sr-only">
+            Enrol an authenticator app and save your recovery codes.
+          </DialogDescription>
+          {enrolling && (
+            <PsyTwoFactorSetup
+              onCancel={() => setEnrolling(false)}
+              onComplete={() => {
+                setEnrolling(false);
+                toast.success("Two-factor authentication enabled");
+                router.refresh();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

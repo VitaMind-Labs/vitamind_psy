@@ -9,6 +9,11 @@ const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", displa
 export const metadata: Metadata = {
   title: { default: "VitaMind Psy", template: "%s | VitaMind Psy" },
   description: "Clinical workspace for psychologists and psychiatrists.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export const viewport: Viewport = {

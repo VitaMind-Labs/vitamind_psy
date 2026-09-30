@@ -144,6 +144,25 @@ export interface PsychologistAuthResponse {
     user: PsychologistAuthUser;
 }
 
+export interface TwoFactorEnrollment {
+    secret: string;
+    otpauth_url: string;
+    qr_code: string;
+}
+
+export interface PsychologistConfirmResponse {
+    is2FAEnabled: boolean;
+    backup_codes: string[];
+    access_token: string;
+    user: PsychologistAuthUser;
+}
+
+/** Password login either opens a session or yields a short-lived 2FA token. */
+export type PsychologistLoginResponse =
+    | PsychologistAuthResponse
+    | { requires_2fa: true; temp_token: string }
+    | { requires_2fa_setup: true; setup_token: string };
+
 export interface PsychologistProfile {
     id: string;
     firstName: string | null;
@@ -160,6 +179,7 @@ export interface PsychologistProfile {
     termsAcceptedAt: string | null;
     termsVersion: string | null;
     isClinicAdmin: boolean;
+    is2FAEnabled: boolean;
     createdAt: string;
 }
 
@@ -564,10 +584,13 @@ function queryString(filters: object = {}) {
     return result ? `?${result}` : '';
 }
 
-async function psychologistAuthRequest<T>(endpoint: string, body?: unknown): Promise<T> {
+async function psychologistAuthRequest<T>(endpoint: string, body?: unknown, bearer?: string): Promise<T> {
     const response = await fetch(`${API_BASE}${PSYCHOLOGIST_API_PREFIX}${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
+        },
         credentials: 'include',
         body: body === undefined ? undefined : JSON.stringify(body),
         cache: 'no-store',
@@ -595,7 +618,32 @@ export const psychologistApi = {
     register: (dto: PsychologistRegisterDto) => psychologistAuthRequest<PsychologistRegistrationResponse>('/auth/psychologist/register', dto),
 
     login: (dto: PsychologistLoginDto) =>
-        psychologistAuthRequest<PsychologistAuthResponse>('/auth/psychologist/login', dto),
+        psychologistAuthRequest<PsychologistLoginResponse>('/auth/psychologist/login', dto),
+
+    /** Completes login with a TOTP code or recovery code; persists the session cookies. */
+    login2fa: (dto: { temp_token: string; token: string }) =>
+        psychologistAuthRequest<PsychologistAuthResponse>('/auth/psychologist/login/2fa', dto),
+
+    /**
+     * Starts 2FA enrolment (QR + secret). Pass the setup token during sign-in;
+     * omit it in-session — the session cookie bearer is attached automatically.
+     */
+    enable2fa: (bearer?: string) =>
+        bearer
+            ? psychologistAuthRequest<TwoFactorEnrollment>('/auth/psychologist/2fa/enable', {}, bearer)
+            : apiClient<TwoFactorEnrollment>('/v1/auth/psychologist/2fa/enable', { method: 'POST' }),
+
+    /**
+     * Confirms enrolment; returns recovery codes exactly once. Session cookies
+     * are persisted on the sign-in path; in-session the existing session continues.
+     */
+    confirm2fa: (token: string, bearer?: string) =>
+        bearer
+            ? psychologistAuthRequest<PsychologistConfirmResponse>('/auth/psychologist/2fa/confirm', { token }, bearer)
+            : apiClient<PsychologistConfirmResponse>('/v1/auth/psychologist/2fa/confirm', {
+                method: 'POST',
+                body: JSON.stringify({ token }),
+            }),
 
     refresh: (dto?: PsychologistRefreshDto) =>
         psychologistAuthRequest<PsychologistAuthResponse>('/auth/psychologist/refresh', dto),
