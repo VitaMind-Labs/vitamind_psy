@@ -1,167 +1,163 @@
 # VitaMind Psy
 
-VitaMind Psy is the psychologist-facing web application in the VitaMind platform. It provides a focused workspace for managing patients, clinical sessions, assessments, notes, progress, reports, alerts, and practice-level insights.
+VitaMind Psy is the psychologist-facing workspace of the VitaMind platform. It is designed to help mental health professionals manage patient records, clinical assessments, session workflows, progress tracking, and practice operations in a secure and structured environment.
 
-The application is designed to support mental-health professionals with structured clinical workflows. It is a professional aid and does not replace clinical judgment, emergency services, or a formal diagnosis.
+The application is built around a calm, focused clinical experience that supports care delivery while keeping the workflow clear and operationally efficient.
 
-## Features
+## Why this product exists
 
-- Secure sign-in and sign-up screens
-- Practice dashboard with overview metrics and clinical alerts
-- Patient directory and patient profiles
-- Session management and session details
-- Clinical assessments with individual assessment views
-- Structured clinical notes and patient journal workflows
-- Progress tracking with charts and life-chart views
-- Weekly reports and report details
-- Coverage and clinical orientation views
-- Notifications center
-- Settings and psychologist profile actions
-- Responsive sidebar navigation and mobile layouts
-- Shared UI primitives based on Radix UI and shadcn/ui patterns
-- Type-safe API helpers and feature-oriented application modules
+VitaMind Psy is intended for clinicians, psychologists, and care teams who need a dedicated digital space to:
 
-## Technology
+- Manage patient information and clinical records
+- Review patient history and progress over time
+- Run assessments and track outcomes
+- Document notes and journal entries
+- Monitor sessions, alerts, and coverage
+- Produce structured reports and progress summaries
 
-- Next.js 16 with the App Router
+This platform supports clinical workflows while preserving professional judgment and human oversight.
+
+## Core features
+
+- Secure sign-in and sign-up flow
+- Practice overview dashboard
+- Patient directory and patient profile management
+- Session and assessment workflows
+- Clinical notes and journaling tools
+- Progress dashboards and life-chart visualization
+- Weekly report generation and report review
+- Notifications and alerts
+- Coverage and scheduling visibility
+- Responsive dashboard navigation for desktop and mobile use
+
+## Technology stack
+
+- Next.js 16
 - React 19
 - TypeScript 5
 - Tailwind CSS 4
-- Radix UI and shadcn/ui components
-- Framer Motion for selected motion interactions
-- Recharts for clinical and progress visualizations
-- React Hook Form and Zod for form handling and validation
-- Lucide React for icons
-- ESLint with the Next.js configuration
+- Radix UI and shadcn/ui
+- Framer Motion
+- Recharts
+- React Hook Form + Zod
+- ESLint
 
-## Requirements
+## Project structure
 
-- Node.js 20 or newer
-- npm 10 or newer
-- Access to the VitaMind API when using live data
+```text
+vitamind_psy/
+├── src/
+│   ├── app/                 # Route structure and layout framework
+│   ├── components/          # Shared UI and interface components
+│   ├── features/            # Feature-specific modules and workflows
+│   ├── hooks/               # Reusable logic and data hooks
+│   ├── lib/                 # Shared utilities and API layers
+│   ├── providers/           # Context and global app providers
+│   ├── types/               # Shared TypeScript models
+│   └── proxy.ts             # Proxy helper or API bridge
+├── public/                  # Static files and branding assets
+├── package.json             # Scripts and dependencies
+├── next.config.ts           # Next.js configuration
+├── tsconfig.json            # TypeScript configuration
+├── README.md                # Project documentation
+├── CLAUDE.md                # Local engineering documentation
+├── .gitignore               # Git ignore rules
+└── .env.local               # Local environment overrides (not committed)
+```
 
-## Getting Started
+## Prerequisites
 
-From the `vitamind_psy` directory:
+- Node.js 20 or later
+- npm 10 or later
+- Access to the VitaMind API for live data
+
+## Quick start
+
+Install dependencies:
 
 ```bash
 npm install
+```
+
+Start the local development server:
+
+```bash
 npm run dev
 ```
 
-The development server runs on [http://localhost:3005](http://localhost:3005).
+The app is available at:
 
-To create an optimized production build and serve it locally:
+- http://localhost:3005
+
+Build for production:
 
 ```bash
 npm run build
+```
+
+Serve the production build:
+
+```bash
 npm run start
 ```
 
-The application uses the Next.js App Router and the source code is located in `src/`.
+## Environment variables
 
-## Environment Variables
-
-Create a local `.env.local` file when a custom API endpoint is required:
+Create a `.env.local` file if you need a custom backend target:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-`NEXT_PUBLIC_API_URL` defaults to `http://localhost:5000` when it is not defined. Never commit `.env`, `.env.local`, credentials, access tokens, or other secrets.
+If this value is not provided, the app will default to the local VitaMind API URL.
 
-## Available Scripts
+## Main user flows
 
-| Script | Description |
-| --- | --- |
-| `npm run dev` | Starts the development server on port 3005 using Webpack |
-| `npm run build` | Creates an optimized production build |
-| `npm run start` | Serves the production build |
-| `npm run lint` | Runs ESLint |
+- `/signin` — clinician authentication
+- `/signup` — account creation
+- `/dashboard` — practice overview
+- `/dashboard/patients` — patient directory
+- `/dashboard/patients/:id` — patient clinical profile
+- `/dashboard/sessions` — session workspace
+- `/dashboard/assessments` — evaluation workflows
+- `/dashboard/reports` — weekly reporting
+- `/dashboard/notifications` — alert and message center
+- `/dashboard/coverage` — clinical coverage view
+- `/dashboard/settings` — profile and configuration
 
-## Project Structure
+## API integration
 
-```text
-src/
-├── app/             Next.js routes, layouts, loading and error states
-├── components/      Shared layout and UI components
-├── features/        Feature modules grouped by clinical workflow
-│   ├── assessments/
-│   ├── auth/
-│   ├── dashboard/
-│   ├── patients/
-│   ├── reports/
-│   ├── sessions/
-│   └── ...
-├── hooks/           Reusable React hooks
-├── lib/             API clients, domain types and shared utilities
-├── providers/       Application-level context providers
-└── types/           Shared TypeScript types
-public/              Static assets such as the application logo
-```
+The client app communicates with the VitaMind backend through a centralized API boundary in the `src/lib` and feature directories. This keeps network requests, validation, and front-end state behavior organized and easier to maintain.
 
-Feature modules generally keep their actions, components, hooks, and supporting logic close to the feature they serve. Server Components are preferred by default; client components are used where browser interactivity or hooks are required.
+## Clinical and privacy considerations
 
-## Main Routes
+This application is designed to support care delivery. It should be used responsibly and with professional oversight.
 
-- `/signin` - Authentication entry point
-- `/signup` - Account creation
-- `/dashboard` - Practice overview
-- `/dashboard/patients` - Patient directory
-- `/dashboard/patients/:id` - Patient profile and clinical workspace
-- `/dashboard/sessions` - Session management
-- `/dashboard/assessments` - Assessment list
-- `/dashboard/reports` - Weekly reports
-- `/dashboard/notes` - Clinical notes workspace
-- `/dashboard/progress` - Progress tracking
-- `/dashboard/alerts` - Clinical alerts
-- `/dashboard/notifications` - Notifications
-- `/dashboard/coverage` - Clinical coverage view
-- `/dashboard/settings` - Application settings
+Important expectations:
 
-## API Integration
+- Do not use personal or sensitive patient data in public repositories or screenshots.
+- Treat all incoming data as untrusted and validate it before rendering or acting on it.
+- Keep secrets, tokens, and real patient records out of logs and local development files.
+- This is a clinical support tool, not a replacement for medical judgment or emergency care.
 
-The frontend API boundary is organized under `src/lib/api/`, with psychologist-facing operations implemented in `src/lib/api/psychologist.ts`. Feature actions and hooks consume this boundary instead of embedding request details in presentation components.
+## Quality checks
 
-The backend URL is configured through `NEXT_PUBLIC_API_URL`. Make sure the API is running and that the configured origin accepts requests from the frontend during local development.
-
-## Quality Checks
-
-Before opening a pull request, run the checks relevant to your change:
+Before submitting changes, run:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-For UI changes, verify the affected route at both desktop and mobile widths. For API or data-flow changes, confirm loading, empty, error, and authenticated states.
+For UI updates, also validate the affected flows in both desktop and mobile layouts.
 
-## Clinical and Security Considerations
+## Contribution guidance
 
-- VitaMind Psy is a clinical support interface, not an autonomous diagnostic system.
-- Do not use real patient information in local development, screenshots, fixtures, or pull requests.
-- Keep personally identifiable information and protected health information out of logs and client-side telemetry.
-- Treat API responses as untrusted input and preserve the existing validation and error-handling boundaries.
-- Report security or privacy concerns privately to the project maintainers rather than opening a public issue with sensitive details.
-
-## Contribution Workflow
-
-1. Create a focused branch from the current development branch.
-2. Keep changes scoped to the relevant feature or shared boundary.
-3. Run lint and build checks before requesting review.
-4. Include a concise description of behavior changes and validation performed.
-5. Do not commit local IDE settings, Claude configuration, environment files, secrets, or generated build output.
-
-The intended integration target for this workspace is `origin/dev`. The prepared commit workflow is:
-
-```bash
-git add README.md .gitignore .claudeignore
-git commit -m "docs: document VitaMind Psy and repository hygiene"
-git push origin HEAD:dev
-```
-
-These commands are documentation only and have not been executed as part of this update.
+1. Start from a well-scoped branch.
+2. Keep feature additions contained to the relevant module.
+3. Validate both code quality and user workflow behavior.
+4. Avoid committing secrets, generated files, or local environment config.
 
 ## License
 
-No public license has been declared for this project. Treat the codebase as proprietary unless the project owners state otherwise.
+No public license has been declared for this project. Treat the code as proprietary unless the project owners state otherwise.
