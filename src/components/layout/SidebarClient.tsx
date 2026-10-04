@@ -16,14 +16,15 @@ interface SidebarClientProps {
   notifications: PsychologistNotification[];
   unreadCount: number;
   openAlertCount: number;
+  requestCount: number;
 }
 
-export function SidebarClient({ children, profile, notifications, unreadCount, openAlertCount }: SidebarClientProps) {
+export function SidebarClient({ children, profile, notifications, unreadCount, openAlertCount, requestCount }: SidebarClientProps) {
   const { collapsed, mobileOpen, closeMobile } = useSidebar();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const counts = { alerts: openAlertCount, notifications: unreadCount };
+  const counts = { alerts: openAlertCount, notifications: unreadCount, requests: requestCount };
 
   // The inset panel is the scroll container on desktop, so reset it on navigation.
   useEffect(() => {

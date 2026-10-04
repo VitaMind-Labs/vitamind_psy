@@ -3,15 +3,16 @@
 import { useMemo, useState } from "react";
 import { addDays, format, formatDistanceStrict, isSameDay } from "date-fns";
 import { toast } from "sonner";
-import { AlertTriangle, CalendarClock, Plus, ShieldCheck, UserRound } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { AlertTriangle, CalendarClock, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { CoverageShift } from "@/lib/api/psychologist";
-import { createCoverageAction } from "@/features/clinical/actions";
+import type { Colleague, CoverageShift } from "@/lib/api/psychologist";
+import { createCoverageAction, removeCoverageAction } from "@/features/clinical/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
 import { KpiCell, KpiGrid, Panel, Segmented } from "@/components/layout/Kpi";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -27,17 +28,24 @@ const RANGE_DAYS = 7;
 
 const coverageSchema = z
   .object({
+    mode: z.enum(["ABSENCE", "COVER", "ON_CALL"]),
     coveringId: z.string().trim().min(1, "Choose who covers this period."),
     absentId: z.string().trim().optional(),
     startsAt: z.string().min(1, "Choose a start time."),
     endsAt: z.string().min(1, "Choose an end time."),
-    type: z.enum(["ON_CALL", "LEAVE_COVER"]),
   })
   .refine((value) => !value.startsAt || !value.endsAt || value.endsAt > value.startsAt, { path: ["endsAt"], message: "End must be after the start." })
-  .refine((value) => value.type !== "LEAVE_COVER" || Boolean(value.absentId), { path: ["absentId"], message: "Leave cover needs the absent clinician." });
+  .refine((value) => value.mode !== "COVER" || Boolean(value.absentId), { path: ["absentId"], message: "Choose the colleague who is away." })
+  .refine((value) => value.mode !== "ABSENCE" || value.coveringId !== "", { path: ["coveringId"], message: "Choose who covers you." });
 
 type CoverageFormValues = z.infer<typeof coverageSchema>;
 type View = "upcoming" | "past";
+
+const MODES = {
+  ABSENCE: { label: "I will be away", hint: "A colleague takes your patients and alerts." },
+  COVER: { label: "Cover for a colleague", hint: "Book a replacement for someone else (clinic lead)." },
+  ON_CALL: { label: "Clinic on-call", hint: "Who receives urgent alerts for the whole clinic (clinic lead)." },
+} as const;
 
 const TYPE_META = {
   ON_CALL: { label: "On-call", variant: "brand" as const, bar: "bg-teal-500", soft: "bg-teal-50 ring-teal-200" },
@@ -74,12 +82,15 @@ function findGaps(shifts: CoverageShift[], from: number, to: number) {
 
 const toLocalInput = (ms: number) => format(ms, "yyyy-MM-dd'T'HH:mm");
 
-export function CoverageView({ initialCoverage, canEdit, currentUser }: { initialCoverage: CoverageShift[]; canEdit: boolean; currentUser: { id: string; name: string } }) {
+export function CoverageView({ initialCoverage, colleagues, canEdit, currentUser }: { initialCoverage: CoverageShift[]; colleagues: Colleague[]; canEdit: boolean; currentUser: { id: string; name: string } }) {
   const now = useNow();
   const [coverage, setCoverage] = useState(initialCoverage);
   const [view, setView] = useState<View>("upcoming");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const form = useForm<CoverageFormValues>({ resolver: zodResolver(coverageSchema), defaultValues: { coveringId: "", absentId: "", startsAt: "", endsAt: "", type: "ON_CALL" } });
+  const form = useForm<CoverageFormValues>({ resolver: zodResolver(coverageSchema), defaultValues: { mode: "ABSENCE", coveringId: "", absentId: "", startsAt: "", endsAt: "" } });
+
+  const mode = useWatch({ control: form.control, name: "mode" });
+  const watchedAbsent = useWatch({ control: form.control, name: "absentId" });
 
   const windowStart = useMemo(() => {
     const date = new Date(now);
@@ -130,7 +141,7 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
     setDialogOpen(open);
     if (open) {
       const start = stats.nextGap?.[0] ?? now;
-      form.reset({ coveringId: "", absentId: "", type: "ON_CALL", startsAt: toLocalInput(start), endsAt: toLocalInput(Math.min(stats.nextGap?.[1] ?? start + 12 * HOUR, start + 24 * HOUR)) });
+      form.reset({ mode: "ABSENCE", coveringId: "", absentId: "", startsAt: toLocalInput(start), endsAt: toLocalInput(Math.min(stats.nextGap?.[1] ?? start + 12 * HOUR, start + 24 * HOUR)) });
     }
   };
 
@@ -138,8 +149,8 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
     try {
       const result = await createCoverageAction({
         coveringId: values.coveringId,
-        absentId: values.absentId || undefined,
-        type: values.type,
+        absentId: values.mode === "ABSENCE" ? currentUser.id : values.mode === "COVER" ? values.absentId : undefined,
+        type: values.mode === "ON_CALL" ? "ON_CALL" : "LEAVE_COVER",
         startsAt: new Date(values.startsAt).toISOString(),
         endsAt: new Date(values.endsAt).toISOString(),
       });
@@ -151,6 +162,22 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
     }
   });
 
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const cancel = async (shift: CoverageShift) => {
+    setCancellingId(shift.id);
+    try {
+      await removeCoverageAction(shift.id);
+      setCoverage((current) => current.filter((item) => item.id !== shift.id));
+      toast.success("Shift cancelled");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to cancel this shift");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+  /** Anyone can cancel their own absence; the clinic lead can cancel any shift of the clinic. */
+  const canCancel = (shift: CoverageShift) => +new Date(shift.endsAt) > now && (canEdit || shift.absent?.id === currentUser.id);
+
   const status = (shift: CoverageShift) =>
     +new Date(shift.startsAt) <= now && +new Date(shift.endsAt) > now ? "live" : +new Date(shift.endsAt) <= now ? "ended" : "upcoming";
 
@@ -161,78 +188,84 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
         title="Coverage & on-call"
         description="Who receives urgent alerts, and when. Keep the next seven days fully covered."
         action={
-          canEdit ? (
-            <Dialog open={dialogOpen} onOpenChange={openDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus size={14} aria-hidden /> Add coverage</Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-xl">
-                <DialogHeader>
-                  <DialogTitle>Add coverage</DialogTitle>
-                  <DialogDescription>Alerts route to the covering clinician for the whole window.</DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={submit} className="space-y-4">
-                    <FormField control={form.control} name="type" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
-                          {(Object.keys(TYPE_META) as Array<keyof typeof TYPE_META>).map((type) => (
+          <Dialog open={dialogOpen} onOpenChange={openDialog}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus size={14} aria-hidden /> {canEdit ? "Add coverage" : "I will be away"}</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-xl">
+              <DialogHeader>
+                <DialogTitle>Add coverage</DialogTitle>
+                <DialogDescription>Alerts route to the covering clinician for the whole window, and they can open the patients concerned (each patient&apos;s consent still applies).</DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={submit} className="space-y-4">
+                  <FormField control={form.control} name="mode" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>What is this?</FormLabel>
+                      <div role="radiogroup" className="grid gap-2 sm:grid-cols-3">
+                        {(Object.keys(MODES) as Array<keyof typeof MODES>)
+                          .filter((mode) => mode === "ABSENCE" || canEdit)
+                          .map((mode) => (
                             <button
-                              key={type}
+                              key={mode}
                               type="button"
                               role="radio"
-                              aria-checked={field.value === type}
-                              onClick={() => field.onChange(type)}
-                              className={cn("cursor-pointer rounded-xl border p-3 text-left transition-colors", field.value === type ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200 hover:border-slate-300")}
+                              aria-checked={field.value === mode}
+                              onClick={() => { field.onChange(mode); form.setValue("coveringId", ""); form.setValue("absentId", ""); }}
+                              className={cn("cursor-pointer rounded-xl border p-3 text-left transition-colors", field.value === mode ? "border-slate-900 ring-1 ring-slate-900" : "border-slate-200 hover:border-slate-300")}
                             >
-                              <span className="block text-[13px] font-semibold text-slate-900">{TYPE_META[type].label}</span>
-                              <span className="block text-[11px] text-slate-500">{type === "ON_CALL" ? "General alert ownership" : "Covers an absent colleague"}</span>
+                              <span className="block text-[13px] font-semibold text-slate-900">{MODES[mode].label}</span>
+                              <span className="block text-[11px] text-slate-500">{MODES[mode].hint}</span>
                             </button>
                           ))}
-                        </div>
-                      </FormItem>
-                    )} />
-                    <FormField control={form.control} name="coveringId" render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Covering clinician</FormLabel>
-                        <div className="flex gap-2">
-                          <FormControl><Input {...field} placeholder="Clinician ID" className="font-mono text-xs" /></FormControl>
-                          <Button type="button" variant="secondary" onClick={() => form.setValue("coveringId", currentUser.id, { shouldValidate: true })}>
-                            <UserRound size={14} aria-hidden /> Me
-                          </Button>
-                        </div>
-                        <FormDescription>{field.value === currentUser.id ? `Assigned to you (${currentUser.name}).` : "Paste a colleague's clinician ID, or assign it to yourself."}</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )} />
+                      </div>
+                    </FormItem>
+                  )} />
+                  {mode === "COVER" && (
                     <FormField control={form.control} name="absentId" render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Absent clinician <span className="font-normal text-slate-500">(leave cover only)</span></FormLabel>
-                        <FormControl><Input {...field} placeholder="Clinician ID" className="font-mono text-xs" /></FormControl>
+                        <FormLabel>Who is away</FormLabel>
+                        <Select value={field.value || undefined} onValueChange={field.onChange}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Choose a colleague" /></SelectTrigger></FormControl>
+                          <SelectContent>{colleagues.map((c) => <SelectItem key={c.id} value={c.id}>{personName(c)}</SelectItem>)}</SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )} />
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <FormField control={form.control} name="startsAt" render={({ field }) => (
-                        <FormItem><FormLabel>Starts</FormLabel><FormControl><Input {...field} type="datetime-local" /></FormControl><FormMessage /></FormItem>
-                      )} />
-                      <FormField control={form.control} name="endsAt" render={({ field }) => (
-                        <FormItem><FormLabel>Ends</FormLabel><FormControl><Input {...field} type="datetime-local" /></FormControl><FormMessage /></FormItem>
-                      )} />
-                    </div>
-                    {stats.nextGap && (
-                      <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">Pre-filled with the next uncovered window.</p>
-                    )}
-                    <DialogFooter>
-                      <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                      <Button type="submit" loading={form.formState.isSubmitting}>Save coverage</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          ) : undefined
+                  )}
+                  <FormField control={form.control} name="coveringId" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{mode === "ABSENCE" ? "Who covers you" : "Covering clinician"}</FormLabel>
+                      <Select value={field.value || undefined} onValueChange={field.onChange}>
+                        <FormControl><SelectTrigger><SelectValue placeholder={colleagues.length || mode !== "ABSENCE" ? "Choose a clinician" : "No colleague in your clinic"} /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {mode !== "ABSENCE" && <SelectItem value={currentUser.id}>Me ({currentUser.name})</SelectItem>}
+                          {colleagues.filter((c) => c.id !== watchedAbsent).map((c) => <SelectItem key={c.id} value={c.id}>{personName(c)}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>{colleagues.length === 0 ? "Cover is arranged inside a clinic. Ask the VitaMind team to attach you to one." : "Only active clinicians of your clinic can cover."}</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField control={form.control} name="startsAt" render={({ field }) => (
+                      <FormItem><FormLabel>Starts</FormLabel><FormControl><Input {...field} type="datetime-local" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                    <FormField control={form.control} name="endsAt" render={({ field }) => (
+                      <FormItem><FormLabel>Ends</FormLabel><FormControl><Input {...field} type="datetime-local" /></FormControl><FormMessage /></FormItem>
+                    )} />
+                  </div>
+                  {stats.nextGap && (
+                    <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">Pre-filled with the next uncovered window.</p>
+                  )}
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit" loading={form.formState.isSubmitting}>Save coverage</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
         }
       />
 
@@ -341,7 +374,8 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
                   <th scope="col" className="px-3 py-2.5 font-medium">Type</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Window</th>
                   <th scope="col" className="px-3 py-2.5 font-medium">Duration</th>
-                  <th scope="col" className="py-2.5 pl-3 pr-5 text-right font-medium">Status</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">Status</th>
+                  <th scope="col" className="py-2.5 pl-1 pr-5"><span className="sr-only">Cancel</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -357,7 +391,7 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
                               {personName(shift.covering)}
                               {shift.covering.id === currentUser.id && <span className="ml-1.5 text-xs font-normal text-slate-500">(you)</span>}
                             </span>
-                            <span className="block text-xs text-slate-500">{shift.absent ? `For ${personName(shift.absent)}` : "General on-call"}</span>
+                            <span className="block text-xs text-slate-500">{shift.absent ? (shift.absent.id === currentUser.id ? "Covering your absence" : `For ${personName(shift.absent)}`) : "General on-call"}</span>
                           </span>
                         </span>
                       </td>
@@ -366,13 +400,20 @@ export function CoverageView({ initialCoverage, canEdit, currentUser }: { initia
                         {format(new Date(shift.startsAt), "EEE MMM d, HH:mm")} – {format(new Date(shift.endsAt), isSameDay(new Date(shift.startsAt), new Date(shift.endsAt)) ? "HH:mm" : "EEE MMM d, HH:mm")}
                       </td>
                       <td className="tabular px-3 py-3 text-xs text-slate-600">{formatDistanceStrict(new Date(shift.endsAt), new Date(shift.startsAt))}</td>
-                      <td className="py-3 pl-3 pr-5 text-right">
+                      <td className="px-3 py-3 text-right">
                         {state === "live" ? (
                           <Badge variant="success" dot>Live now</Badge>
                         ) : state === "upcoming" ? (
                           <span className="text-xs text-slate-500">Starts {formatDistanceStrict(new Date(shift.startsAt), now, { addSuffix: true })}</span>
                         ) : (
                           <Badge>Ended</Badge>
+                        )}
+                      </td>
+                      <td className="py-3 pl-1 pr-5 text-right">
+                        {canCancel(shift) && (
+                          <Button variant="ghost" size="icon-sm" aria-label="Cancel this shift" loading={cancellingId === shift.id} onClick={() => void cancel(shift)}>
+                            <Trash2 size={14} aria-hidden />
+                          </Button>
                         )}
                       </td>
                     </tr>

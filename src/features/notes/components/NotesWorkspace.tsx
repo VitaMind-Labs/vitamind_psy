@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { AlertTriangle, ChevronRight, FilePlus2, Search } from "lucide-react";
-import type { PatientListItem, PsychologistNote } from "@/lib/api/psychologist";
+import type { NotesOverview, PatientRef } from "@/lib/api/psychologist";
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
 import { KpiCell, KpiGrid, Panel, Segmented } from "@/components/layout/Kpi";
 import { ChartEmpty } from "@/features/dashboard/components/overview/cards";
@@ -13,53 +13,40 @@ import { bucketByDay, windowDelta } from "@/features/dashboard/lib/metrics";
 import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/utils";
 
-type NoteRecord = { patient: PatientListItem; notes: PsychologistNote[] };
 type Coverage = "gaps" | "all";
 
-const fullName = (patient: PatientListItem) => `${patient.firstName}${patient.lastName ? ` ${patient.lastName}` : ""}`;
+const fullName = (patient: PatientRef) => `${patient.firstName}${patient.lastName ? ` ${patient.lastName}` : ""}`;
 const notesHref = (patientId: string) => `/dashboard/patients/${patientId}?tab=notes`;
 const STALE_DAYS = 30;
 
-export function NotesWorkspace({
-  records,
-  failedCount,
-  truncated,
-  totalPatients,
-}: {
-  records: NoteRecord[];
-  failedCount: number;
-  truncated: boolean;
-  totalPatients: number;
-}) {
+export function NotesWorkspace({ overview }: { overview: NotesOverview }) {
   const now = useNow();
   const [query, setQuery] = useState("");
   const [coverage, setCoverage] = useState<Coverage>("gaps");
 
-  const feed = useMemo(
-    () => records.flatMap(({ patient, notes }) => notes.map((note) => ({ note, patient }))).sort((a, b) => b.note.createdAt.localeCompare(a.note.createdAt)),
-    [records],
-  );
+  const feed = useMemo(() => overview.notes.map((note) => ({ note, patient: note.patient })), [overview.notes]);
+  const totalNotes = useMemo(() => overview.patients.reduce((sum, patient) => sum + patient.noteCount, 0), [overview.patients]);
+  const truncated = totalNotes > overview.notes.length;
 
   const patients = useMemo(
     () =>
-      records.map(({ patient, notes }) => {
-        const last = notes.reduce<string | null>((latest, note) => (!latest || note.createdAt > latest ? note.createdAt : latest), null);
-        const ageDays = last ? (now - new Date(last).getTime()) / 86_400_000 : null;
-        return { patient, count: notes.length, last, gap: patient.status === "ACTIVE" && (ageDays === null || ageDays > STALE_DAYS) };
+      overview.patients.map((patient) => {
+        const ageDays = patient.lastNoteAt ? (now - new Date(patient.lastNoteAt).getTime()) / 86_400_000 : null;
+        return { patient, count: patient.noteCount, last: patient.lastNoteAt, gap: patient.status === "ACTIVE" && (ageDays === null || ageDays > STALE_DAYS) };
       }),
-    [records, now],
+    [overview.patients, now],
   );
 
   const stats = useMemo(() => {
     const all = feed.map((item) => item.note);
     return {
-      total: all.length,
+      total: totalNotes,
       week: windowDelta(all, (note) => note.createdAt, 7, now),
       spark: bucketByDay(all, (note) => note.createdAt, 30, now).map((row) => row.value),
       documented: patients.filter((item) => item.count > 0).length,
       gaps: patients.filter((item) => item.gap).length,
     };
-  }, [feed, patients, now]);
+  }, [feed, patients, totalNotes, now]);
 
   const visibleFeed = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -81,18 +68,17 @@ export function NotesWorkspace({
     <div className="space-y-6">
       <DashboardPageHeader eyebrow="Clinical records" title="Clinical notes" description="Private notes across your caseload. Notes are written and edited inside each patient record." />
 
-      {(failedCount > 0 || truncated) && (
+      {truncated && (
         <p role="status" className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
           <AlertTriangle size={14} aria-hidden className="shrink-0" />
-          {truncated && `Showing notes for your ${records.length} most recently active patients (of ${totalPatients}). `}
-          {failedCount > 0 && `Notes for ${failedCount} patient${failedCount === 1 ? "" : "s"} could not be loaded.`}
+          Search and the weekly figures cover your {overview.notes.length} most recent notes (of {totalNotes}). Open a patient record to search older notes.
         </p>
       )}
 
       <KpiGrid>
-        <KpiCell label="Notes on file" value={stats.total} hint={`Across ${records.length} patients`} spark={stats.spark} />
+        <KpiCell label="Notes on file" value={stats.total} hint={`Across ${overview.patients.length} patients`} spark={stats.spark} />
         <KpiCell label="Written this week" value={stats.week.current} delta={{ pct: stats.week.pct, goodWhen: "up", caption: "vs last week" }} />
-        <KpiCell label="Patients documented" value={stats.documented} unit={`/ ${records.length}`} hint="At least one note" />
+        <KpiCell label="Patients documented" value={stats.documented} unit={`/ ${overview.patients.length}`} hint="At least one note" />
         <KpiCell label="Documentation gaps" value={stats.gaps} tone={stats.gaps > 0 ? "warning" : undefined} hint={`Active, no note in ${STALE_DAYS} days`} />
       </KpiGrid>
 

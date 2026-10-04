@@ -14,4 +14,6 @@ export async function assignExerciseAction(patientId: string, dto: { exerciseId:
 export async function createGoalAction(patientId: string, dto: { title: string; description?: string; weekStart?: string }) { return psychologistApi.createGoal(patientId, dto); }
 export async function sendMessageAction(patientId: string, content: string, isUrgent = false) { return psychologistApi.sendMessage(patientId, content, isUrgent); }
 export async function createCoverageAction(dto: { coveringId: string; absentId?: string; type?: "ON_CALL" | "LEAVE_COVER"; startsAt: string; endsAt: string }) { return psychologistApi.createCoverage(dto); }
-export async function acceptReportExportAction(reportId: string) { return psychologistApi.exportWeeklyReport(reportId); }
+export async function exportWeeklyReportAction(reportId: string) { return psychologistApi.exportWeeklyReport(reportId); }
+
+export async function removeCoverageAction(shiftId: string) { return psychologistApi.removeCoverage(shiftId); }

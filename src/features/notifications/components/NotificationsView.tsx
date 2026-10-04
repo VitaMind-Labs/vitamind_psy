@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { format, formatDistanceToNowStrict, isToday, isYesterday } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import { AlertTriangle, BarChart3, Bell, CalendarDays, Check, CheckCheck, ChevronRight, ClipboardCheck, Search, ShieldPlus, type LucideIcon } from "lucide-react";
-import { markNotificationReadServer } from "@/features/notifications/actions/notifications";
+import { AlertTriangle, BarChart3, Bell, CalendarDays, Check, CheckCheck, ChevronRight, ClipboardCheck, Inbox, MessageSquareText, Search, ShieldPlus, type LucideIcon } from "lucide-react";
+import { markAllNotificationsReadServer, markNotificationReadServer } from "@/features/notifications/actions/notifications";
+import { notificationHref } from "@/features/notifications/lib/notification-links";
 import type { PsychologistNotification } from "@/lib/api/psychologist";
 import { Button } from "@/components/ui/button";
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
@@ -16,19 +17,40 @@ import { bucketByDay, windowDelta } from "@/features/dashboard/lib/metrics";
 import { useNow } from "@/hooks/use-now";
 import { cn } from "@/lib/utils";
 
-type Category = { key: string; label: string; icon: LucideIcon; tone: string; href: string | null };
+type Category = { key: string; label: string; icon: LucideIcon; tone: string };
 
-// Notification `type` is a free-form string; classify by keyword and fall back to "General".
 const CATEGORIES: Category[] = [
-  { key: "alert", label: "Alerts", icon: AlertTriangle, tone: "bg-red-50 text-red-600", href: "/dashboard/alerts" },
-  { key: "report", label: "Reports", icon: BarChart3, tone: "bg-orange-50 text-orange-600", href: "/dashboard/reports" },
-  { key: "session", label: "Sessions", icon: CalendarDays, tone: "bg-teal-50 text-teal-700", href: "/dashboard/sessions" },
-  { key: "assessment", label: "Assessments", icon: ClipboardCheck, tone: "bg-sky-50 text-sky-700", href: "/dashboard/assessments" },
-  { key: "coverage", label: "Coverage", icon: ShieldPlus, tone: "bg-indigo-50 text-indigo-700", href: "/dashboard/coverage" },
+  { key: "assign", label: "Requests", icon: Inbox, tone: "bg-amber-50 text-amber-700" },
+  { key: "alert", label: "Alerts", icon: AlertTriangle, tone: "bg-red-50 text-red-600" },
+  { key: "message", label: "Messages", icon: MessageSquareText, tone: "bg-violet-50 text-violet-700" },
+  { key: "report", label: "Reports", icon: BarChart3, tone: "bg-orange-50 text-orange-600" },
+  { key: "session", label: "Sessions", icon: CalendarDays, tone: "bg-teal-50 text-teal-700" },
+  { key: "assessment", label: "Assessments", icon: ClipboardCheck, tone: "bg-sky-50 text-sky-700" },
+  { key: "coverage", label: "Coverage", icon: ShieldPlus, tone: "bg-indigo-50 text-indigo-700" },
 ];
-const GENERAL: Category = { key: "general", label: "General", icon: Bell, tone: "bg-slate-100 text-slate-600", href: null };
+const GENERAL: Category = { key: "general", label: "General", icon: Bell, tone: "bg-slate-100 text-slate-600" };
 
-const categoryOf = (item: PsychologistNotification) => CATEGORIES.find((category) => `${item.type} ${item.title}`.toLowerCase().includes(category.key)) ?? GENERAL;
+// The backend's NotificationType, by category. Anything unlisted falls back to a keyword match, then "General".
+const CATEGORY_BY_TYPE: Record<string, string> = {
+  CLINICAL_ALERT: "alert",
+  RISK_ALERT: "alert",
+  CRISIS: "alert",
+  SECURE_MESSAGE: "message",
+  WEEKLY_REPORT_READY: "report",
+  REPORT_READY: "report",
+  REPORT_ESCALATION: "report",
+  PATIENT_ASSIGNED: "assign",
+  ASSIGNMENT_ACCEPTED: "assign",
+  ASSIGNMENT_DECLINED: "assign",
+  SESSION_REMINDER: "session",
+  ASSESSMENT_READY: "assessment",
+  COVERAGE_ASSIGNED: "coverage",
+};
+
+const categoryOf = (item: PsychologistNotification) => {
+  const key = CATEGORY_BY_TYPE[item.type];
+  return (key ? CATEGORIES.find((category) => category.key === key) : CATEGORIES.find((category) => item.type.toLowerCase().includes(category.key))) ?? GENERAL;
+};
 
 function dayLabel(date: Date) {
   if (isToday(date)) return "Today";
@@ -88,17 +110,16 @@ export function NotificationsView({ initialNotifications }: { initialNotificatio
   };
 
   const markAll = async () => {
-    const unread = notifications.filter((item) => !item.read);
-    if (unread.length === 0) return;
+    if (stats.unread === 0) return;
     setMarkingAll(true);
+    const before = notifications;
     setNotifications((current) => current.map((item) => ({ ...item, read: true })));
-    const results = await Promise.allSettled(unread.map((item) => markNotificationReadServer(item.id)));
-    const failed = new Set(unread.filter((_, index) => results[index].status === "rejected").map((item) => item.id));
-    if (failed.size > 0) {
-      setNotifications((current) => current.map((item) => (failed.has(item.id) ? { ...item, read: false } : item)));
-      toast.error(`${failed.size} notification${failed.size === 1 ? "" : "s"} could not be updated`);
-    } else {
+    try {
+      await markAllNotificationsReadServer();
       toast.success("All notifications marked as read");
+    } catch {
+      setNotifications(before);
+      toast.error("Could not mark notifications as read");
     }
     setMarkingAll(false);
     syncShell();
@@ -106,7 +127,7 @@ export function NotificationsView({ initialNotifications }: { initialNotificatio
 
   const open = (item: PsychologistNotification) => {
     if (!item.read) void markRead(item.id);
-    const href = categoryOf(item).href;
+    const href = notificationHref(item);
     if (href) router.push(href);
   };
 
@@ -195,6 +216,7 @@ export function NotificationsView({ initialNotifications }: { initialNotificatio
                             </span>
                             <button type="button" onClick={() => open(item)} className="min-w-0 flex-1 cursor-pointer text-left after:absolute after:inset-0">
                               <span className={cn("block truncate text-[13px]", item.read ? "text-slate-600" : "font-semibold text-slate-900")}>{item.title}</span>
+                              {item.message && <span className="block truncate text-xs text-slate-500">{item.message}</span>}
                               <span className="block text-xs text-slate-500">
                                 {cat.label} · <time dateTime={item.createdAt} title={format(new Date(item.createdAt), "MMM d, yyyy · HH:mm")}>{formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}</time>
                               </span>
@@ -210,7 +232,7 @@ export function NotificationsView({ initialNotifications }: { initialNotificatio
                                 <Check size={14} aria-hidden />
                               </Button>
                             )}
-                            {cat.href && <ChevronRight size={15} aria-hidden className="shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" />}
+                            {notificationHref(item) && <ChevronRight size={15} aria-hidden className="shrink-0 text-slate-300 transition-colors group-hover:text-slate-500" />}
                           </motion.li>
                         );
                       })}

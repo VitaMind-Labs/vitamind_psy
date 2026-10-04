@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { WeeklyReport } from "@/lib/api/psychologist";
 import { acknowledgeWeeklyReportAction, annotateWeeklyReportAction } from "@/features/reports/actions/weekly-reports";
-import { acceptReportExportAction } from "@/features/clinical/actions";
+import { exportWeeklyReportAction } from "@/features/clinical/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,7 +108,7 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
 
   const exportReport = async (reportId: string) => {
     try {
-      await acceptReportExportAction(reportId);
+      await exportWeeklyReportAction(reportId);
       toast.success("Export logged. Opening print dialog.");
       window.print();
     } catch {
