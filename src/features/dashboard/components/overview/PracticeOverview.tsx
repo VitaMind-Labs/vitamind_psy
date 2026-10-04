@@ -20,6 +20,8 @@ export interface PracticeOverviewData {
   caseload: CaseloadItem[];
   sessions: SessionListItem[];
   alerts: ClinicalAlert[];
+  /** Open alerts across the whole caseload (the `alerts` list is capped). */
+  openAlertTotal: number;
   reports: WeeklyReport[];
   clinicianName: string;
 }
@@ -54,7 +56,7 @@ function sessionBucket(session: SessionListItem): (typeof SESSION_KEYS)[number] 
 }
 
 export function PracticeOverview({ data }: { data: PracticeOverviewData }) {
-  const { dashboard, caseload, sessions, alerts, reports, clinicianName } = data;
+  const { dashboard, caseload, sessions, alerts, openAlertTotal, reports, clinicianName } = data;
   const now = useNow();
   const [range, setRange] = useState<Range>("30");
   const [metric, setMetric] = useState<Metric>("sessions");
@@ -66,7 +68,7 @@ export function PracticeOverview({ data }: { data: PracticeOverviewData }) {
     const pendingReports = reports.filter((report) => report.status !== "RELEASED" && !report.acknowledgedAt);
     const sparkDays = Math.min(days, 30);
     return {
-      openAlerts: openAlerts.length,
+      openAlerts: openAlertTotal,
       urgentOpen: openAlerts.filter((alert) => isUrgent(alert.severity)).length,
       alertDelta: windowDelta(alerts, (alert) => alert.triggeredAt, days, now),
       alertSpark: bucketByDay(alerts, (alert) => alert.triggeredAt, sparkDays, now).map((row) => row.value),
@@ -77,7 +79,7 @@ export function PracticeOverview({ data }: { data: PracticeOverviewData }) {
       pendingReviews: dashboard.stats.pendingAssessments + pendingReports.length,
       pendingReports: pendingReports.length,
     };
-  }, [alerts, sessions, reports, caseload, dashboard.stats.pendingAssessments, days, now]);
+  }, [alerts, openAlertTotal, sessions, reports, caseload, dashboard.stats.pendingAssessments, days, now]);
 
   const chart = useMemo(() => {
     const rows =
@@ -91,14 +93,9 @@ export function PracticeOverview({ data }: { data: PracticeOverviewData }) {
 
   const risk = useMemo(() => {
     const count = (light: CaseloadItem["trafficLight"]) => caseload.filter((item) => item.trafficLight === light).length;
-    const drift = caseload
-      .filter((item) => item.driftScore !== null)
-      .sort((a, b) => (b.driftScore ?? 0) - (a.driftScore ?? 0))
-      .slice(0, 5);
     return {
       segments: (["RED", "AMBER", "GREEN"] as const).map((light) => ({ label: TRAFFIC_META[light].label, value: count(light), color: TRAFFIC_META[light].color })),
       worsening: caseload.filter(isWorsening).length,
-      drift,
     };
   }, [caseload]);
 
@@ -264,32 +261,6 @@ export function PracticeOverview({ data }: { data: PracticeOverviewData }) {
               <ChevronRight size={13} aria-hidden className="ml-auto" />
             </Link>
           )}
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <p className="mb-3 text-xs font-medium text-slate-500">Highest drift score</p>
-            {risk.drift.length === 0 ? (
-              <p className="text-sm text-slate-500">No drift scores computed yet.</p>
-            ) : (
-              <ul className="space-y-3">
-                {risk.drift.map((item) => {
-                  const score = item.driftScore ?? 0;
-                  const level = item.driftLevel ?? item.riskLevel;
-                  return (
-                    <li key={item.id}>
-                      <Link href={`/dashboard/patients/${item.id}`} className="group block">
-                        <div className="flex items-center justify-between gap-2 text-[13px]">
-                          <span className="truncate font-medium text-slate-900 group-hover:text-teal-700">{fullName(item)}</span>
-                          <span className="tabular shrink-0 text-xs font-semibold text-slate-700">{score.toFixed(2)}</span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, score * 100)}%`, background: RISK_META[level].color }} />
-                        </div>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
         </Panel>
       </div>
 

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { format, formatDistanceToNowStrict } from "date-fns";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, ChevronRight, Search } from "lucide-react";
-import type { AssessmentListItem, AssessmentStatus, PatientListItem } from "@/lib/api/psychologist";
+import type { AssessmentListItem, AssessmentQueue, AssessmentStatus, PatientRef } from "@/lib/api/psychologist";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { DashboardPageHeader } from "@/components/layout/DashboardUI";
 import { KpiCell, KpiGrid, Panel, RatioBar, Segmented } from "@/components/layout/Kpi";
@@ -14,12 +14,7 @@ import { PatientAvatar } from "@/features/dashboard/components/overview/Practice
 import { bucketByDay, windowDelta } from "@/features/dashboard/lib/metrics";
 import { useNow } from "@/hooks/use-now";
 
-interface AssessmentGroup {
-  patient: PatientListItem;
-  assessments: AssessmentListItem[];
-}
-
-type Row = AssessmentListItem & { patient: PatientListItem };
+type Row = AssessmentQueue["data"][number];
 type Filter = "queue" | "FOLLOW_UP_REQUIRED" | "REVIEWED" | "all";
 
 export const REVIEW_META: Record<AssessmentListItem["reviewStatus"], { label: string; variant: BadgeVariant; color: string; rank: number }> = {
@@ -38,14 +33,15 @@ export const ASSESSMENT_STATUS_LABEL: Record<AssessmentStatus, string> = {
 };
 
 const needsReview = (row: AssessmentListItem) => row.status === "COMPLETED" && (row.reviewStatus === "PENDING" || row.reviewStatus === "DRAFT");
-const fullName = (patient: PatientListItem) => `${patient.firstName}${patient.lastName ? ` ${patient.lastName}` : ""}`;
+const fullName = (patient: PatientRef) => `${patient.firstName}${patient.lastName ? ` ${patient.lastName}` : ""}`;
 
-export function AssessmentsIndex({ groups, failedCount = 0 }: { groups: AssessmentGroup[]; failedCount?: number }) {
+export function AssessmentsIndex({ queue }: { queue: AssessmentQueue }) {
   const now = useNow();
   const [filter, setFilter] = useState<Filter>("queue");
   const [query, setQuery] = useState("");
 
-  const rows = useMemo<Row[]>(() => groups.flatMap((group) => group.assessments.map((assessment) => ({ ...assessment, patient: group.patient }))), [groups]);
+  const rows = queue.data;
+  const truncated = queue.meta.total > rows.length;
 
   const stats = useMemo(() => {
     const completed = rows.filter((row) => row.completedAt);
@@ -76,9 +72,9 @@ export function AssessmentsIndex({ groups, failedCount = 0 }: { groups: Assessme
     <div className="space-y-6">
       <DashboardPageHeader eyebrow="Clinical records" title="Assessments" description="MIRA diagnostic assessments across your caseload, ordered by what needs your review first." />
 
-      {failedCount > 0 && (
+      {truncated && (
         <p role="status" className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
-          <AlertTriangle size={14} aria-hidden /> Assessments for {failedCount} patient{failedCount === 1 ? "" : "s"} could not be loaded. Refresh to retry.
+          <AlertTriangle size={14} aria-hidden /> Showing the {rows.length} most recent assessments (of {queue.meta.total}). Older ones are in each patient record.
         </p>
       )}
 

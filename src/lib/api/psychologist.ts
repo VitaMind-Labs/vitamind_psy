@@ -87,6 +87,10 @@ export interface JournalListQueryDto extends PatientDateRangeQueryDto {
 
 export interface SessionListQueryDto extends PatientDateRangeQueryDto {
     status?: TherapySessionStatus;
+    /** Restrict to one patient (the patient record). */
+    patientId?: string;
+    /** `desc` returns the most recent and upcoming sessions first, so a cap never hides them. */
+    order?: 'asc' | 'desc';
     page?: number;
     limit?: number;
 }
@@ -237,6 +241,7 @@ export interface ClinicalAlert {
 export interface AlertQuery {
     status?: AlertStatus;
     severity?: RiskLevel;
+    patientId?: string;
     page?: number;
     limit?: number;
 }
@@ -345,6 +350,89 @@ export interface CoverageShift {
     endsAt: string;
     covering: { id: string; firstName: string; lastName: string };
     absent: { id: string; firstName: string; lastName: string } | null;
+    /** Server view of "now": the shift is in effect. */
+    active?: boolean;
+    /** Why this shift is on my screen: I cover, I am covered, or it is my clinic's rota. */
+    role?: 'COVERING' | 'COVERED' | 'CLINIC';
+}
+
+export interface Colleague {
+    id: string;
+    firstName: string;
+    lastName: string;
+    clinicalRole: ClinicianRole;
+}
+
+export type AssignmentRequestView = 'AWAITING_ME' | 'AWAITING_PATIENT' | 'DECLINED';
+export type AssignmentRequestStage = 'AWAITING_ME' | 'AWAITING_PATIENT' | 'ACTIVE' | 'DECLINED';
+
+/** Before the care relationship exists a clinician sees who the patient is, never anything clinical. */
+export interface AssignmentRequest {
+    assignmentId: string;
+    stage: AssignmentRequestStage;
+    isPrimary: boolean;
+    requestedAt: string;
+    respondedAt: string | null;
+    declineReason: string | null;
+    patient: {
+        id: string;
+        patientCode: string;
+        nickname: string;
+        preferredLanguage: string;
+        age: number | null;
+        memberSince: string;
+    };
+}
+
+export interface AssignmentRequestList {
+    data: AssignmentRequest[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    /** Requests waiting for my answer, whatever view is open. */
+    awaitingMe: number;
+}
+
+export type Trend = 'IMPROVING' | 'STABLE' | 'DECLINING' | 'NO_DATA';
+
+export interface MonthlyPatientRow {
+    patientId: string;
+    patientCode: string;
+    nickname: string;
+    isPrimary: boolean;
+    /** True when I see this patient because I cover their clinician. */
+    covered: boolean;
+    trafficLight: TrafficLight | null;
+    riskLevel: RiskLevel | null;
+    openAlerts: number;
+    daysCheckedIn: number;
+    completionPct: number;
+    lastCheckinAt: string | null;
+    averages: { mood: number | null; energy: number | null; focus: number | null; sleepHours: number | null };
+    previousMood: number | null;
+    moodDelta: number | null;
+    trend: Trend;
+    goals: { done: number; partial: number; missed: number; total: number; achievedPct: number | null };
+    journalShared: boolean;
+    needsAttention: boolean;
+}
+
+export interface MonthlyOverview {
+    period: { year: number; month: number; from: string; to: string; elapsedDays: number };
+    summary: {
+        patients: number;
+        sharingMood: number;
+        notSharing: number;
+        withCheckins: number;
+        silent: number;
+        improving: number;
+        declining: number;
+        needingAttention: number;
+        averageMood: number | null;
+        averageCompletionPct: number | null;
+    };
+    patients: MonthlyPatientRow[];
 }
 
 export interface ExerciseCatalogItem {
@@ -386,7 +474,8 @@ export interface ConfirmedDiagnosis {
 
 export interface LifeChartResponse {
     period: { from: string; to: string };
-    checkins: Array<{ checkinDate: string; moodScore: number; sleepHours: number | null; anxietyLevel: number | null; energyLevel: number | null; medicationTaken: boolean | null }>;
+    /** Daily check-ins on the patient's own 1-5 scale; sleep is null when the patient does not share it. */
+    checkins: Array<{ date: string; mood: number; energy: number; focus: number; sleepHours: number | null }>;
     driftScores: Array<{ score: number; level: RiskLevel; components: Record<string, unknown> | null; computedAt: string }>;
     sessions: Array<{ id: string; scheduledAt: string; status: string; type: string }>;
     notShared: string[];
@@ -397,6 +486,8 @@ export interface DashboardResponse {
         totalPatients: number;
         activePatients: number;
         pendingAssessments: number;
+        /** Patient requests from the admin team that wait for this clinician's answer. */
+        pendingRequests?: number;
         upcomingSessions: number;
     };
     recentPatients: Array<{
@@ -425,6 +516,15 @@ export interface PaginatedResponse<T> {
     meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+export interface PatientSharing {
+    diagnostics: boolean;
+    mood: boolean;
+    sleep: boolean;
+    medication: boolean;
+    exercises: boolean;
+    journal: 'NONE' | 'FLAGGED_EXCERPTS' | 'FULL' | string;
+}
+
 export interface PatientListItem {
     id: string;
     patientCode: string;
@@ -434,6 +534,15 @@ export interface PatientListItem {
     status: PatientStatus;
     lastActivityAt: string | null;
     lastAssessmentAt: string | null;
+    assignedAt?: string;
+    isPrimary?: boolean;
+    /** Null when the patient does not share mood data. */
+    trafficLight?: TrafficLight | null;
+    riskLevel?: RiskLevel | null;
+    openAlerts?: number;
+    lastCheckinAt?: string | null;
+    checkinCompletion7d?: number | null;
+    sharing?: PatientSharing;
 }
 
 export interface PatientDetailResponse {
@@ -458,18 +567,6 @@ export interface PatientDetailResponse {
         createdAt: string | null;
         orientation: string | null;
         riskLevel: string | null;
-    }>;
-}
-
-export interface ProgressResponse {
-    period: { from: string; to: string };
-    entries: Array<{
-        date: string;
-        mood: number | null;
-        stress: number | null;
-        energy: number | null;
-        sleepHours: number | null;
-        source: 'PATIENT_REPORTED';
     }>;
 }
 
@@ -567,12 +664,43 @@ export interface SessionDetailResponse {
     completedAt: string | null;
 }
 
+export type NotificationReferenceKind = 'CLINICAL_ALERT' | 'WEEKLY_REPORT' | 'PATIENT_MESSAGE' | 'ASSIGNMENT_REQUEST' | 'PATIENT' | 'SESSION' | 'COVERAGE' | 'LICENSE';
+
+/** The record a notification is about; the app decides which page shows it (see notification-links). */
+export interface NotificationReference {
+    kind: NotificationReferenceKind;
+    id: string;
+    patientId?: string;
+}
+
 export interface PsychologistNotification {
     id: string;
     type: string;
     title: string;
+    message?: string;
+    priority?: 'NORMAL' | 'HIGH' | 'URGENT';
+    data?: Record<string, unknown> | null;
+    reference?: NotificationReference | null;
     read: boolean;
     createdAt: string;
+}
+
+export interface PatientRef {
+    id: string;
+    patientCode: string;
+    firstName: string;
+    lastName: string | null;
+    status: PatientStatus;
+}
+
+export interface NotesOverview {
+    patients: Array<PatientRef & { noteCount: number; lastNoteAt: string | null }>;
+    notes: Array<PsychologistNote & { patient: PatientRef }>;
+}
+
+export interface AssessmentQueue {
+    data: Array<AssessmentListItem & { patient: PatientRef }>;
+    meta: { total: number; limit: number };
 }
 
 function queryString(filters: object = {}) {
@@ -695,14 +823,24 @@ export const psychologistApi = {
     getMessages: (patientId: string) => apiClient<SecureMessagesResponse>(`/v1/psychologist/patients/${patientId}/messages`),
     sendMessage: (patientId: string, content: string, isUrgent = false) => apiClient<SecureMessage>(`/v1/psychologist/patients/${patientId}/messages`, { method: 'POST', body: JSON.stringify({ content, isUrgent }) }),
     getCoverage: () => apiClient<{ data: CoverageShift[] }>('/v1/psychologist/coverage'),
+    removeCoverage: (shiftId: string) => apiClient<{ id: string; deleted: boolean }>(`/v1/psychologist/coverage/${shiftId}`, { method: 'DELETE' }),
+    getColleagues: () => apiClient<{ data: Colleague[] }>('/v1/psychologist/colleagues'),
+
+    listAssignmentRequests: (filters?: { view?: AssignmentRequestView; page?: number; limit?: number }) =>
+        apiClient<AssignmentRequestList>(`/v1/psychologist/assignment-requests${queryString(filters)}`),
+    acceptAssignmentRequest: (assignmentId: string) =>
+        apiClient<{ data: AssignmentRequest }>(`/v1/psychologist/assignment-requests/${assignmentId}/accept`, { method: 'POST' }),
+    declineAssignmentRequest: (assignmentId: string, reason: string) =>
+        apiClient<{ data: AssignmentRequest }>(`/v1/psychologist/assignment-requests/${assignmentId}/decline`, { method: 'POST', body: JSON.stringify({ reason }) }),
+
+    getMonthlyOverview: (year: number, month: number) =>
+        apiClient<MonthlyOverview>(`/v1/psychologist/reports/monthly-overview${queryString({ year, month })}`),
     createCoverage: (dto: { coveringId: string; absentId?: string; type?: 'ON_CALL' | 'LEAVE_COVER'; startsAt: string; endsAt: string }) => apiClient<CoverageShift>('/v1/psychologist/coverage', { method: 'POST', body: JSON.stringify(dto) }),
 
     listPatients: (filters?: PatientListQueryDto) =>
         apiClient<PaginatedResponse<PatientListItem>>(`/v1/psychologist/patients${queryString(filters)}`),
     getPatient: (patientId: string) =>
         apiClient<PatientDetailResponse>(`/v1/psychologist/patients/${patientId}`),
-    getPatientProgress: (patientId: string, filters?: PatientDateRangeQueryDto) =>
-        apiClient<ProgressResponse>(`/v1/psychologist/patients/${patientId}/progress${queryString(filters)}`),
     getPatientJournal: (patientId: string, filters?: JournalListQueryDto) =>
         apiClient<PaginatedResponse<JournalEntry>>(
             `/v1/psychologist/patients/${patientId}/journal${queryString(filters)}`,
@@ -721,6 +859,9 @@ export const psychologistApi = {
             `/v1/psychologist/patients/${patientId}/assessments/${assessmentId}/review`,
             { method: 'POST', body: JSON.stringify(dto) },
         ),
+
+    getNotesOverview: (limit = 100) => apiClient<NotesOverview>(`/v1/psychologist/notes${queryString({ limit })}`),
+    getAssessmentQueue: (limit = 100) => apiClient<AssessmentQueue>(`/v1/psychologist/assessments${queryString({ limit })}`),
 
     listNotes: (patientId: string) =>
         apiClient<{ data: PsychologistNote[] }>(`/v1/psychologist/patients/${patientId}/notes`),
@@ -763,8 +904,12 @@ export const psychologistApi = {
 
     listNotifications: () =>
         apiClient<{ data: PsychologistNotification[] }>('/v1/psychologist/notifications'),
+    getUnreadNotificationCount: () =>
+        apiClient<{ unread: number }>('/v1/psychologist/notifications/unread-count'),
     markNotificationRead: (notificationId: string) =>
         apiClient<{ message: string }>(`/v1/psychologist/notifications/${notificationId}/read`, {
             method: 'PATCH',
         }),
+    markAllNotificationsRead: () =>
+        apiClient<{ updated: number }>('/v1/psychologist/notifications/read-all', { method: 'PATCH' }),
 };

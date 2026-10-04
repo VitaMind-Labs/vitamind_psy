@@ -18,6 +18,8 @@ import {
 import { useSidebar } from "@/providers/SidebarProvider";
 import { CommandPalette, useCommandPaletteShortcut } from "@/features/dashboard/components/command-palette";
 import type { PsychologistNotification, PsychologistProfile } from "@/lib/api/psychologist";
+import { markNotificationReadServer } from "@/features/notifications/actions/notifications";
+import { notificationHref } from "@/features/notifications/lib/notification-links";
 import { cn } from "@/lib/utils";
 
 const SECTIONS: Record<string, string> = {
@@ -26,7 +28,6 @@ const SECTIONS: Record<string, string> = {
   patients: "Patients",
   assessments: "Assessments",
   reports: "Weekly reports",
-  progress: "Progress",
   sessions: "Sessions",
   notes: "Notes",
   notifications: "Notifications",
@@ -64,6 +65,11 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
   useCommandPaletteShortcut(openPalette);
   const isCoordinator = profile.role === "CARE_COORDINATOR";
   const recent = notifications.slice(0, 6);
+  // Open the record the notification is about (or the inbox when it has none) and mark it read.
+  const openNotification = (item: PsychologistNotification) => {
+    if (!item.read) void markNotificationReadServer(item.id).then(() => router.refresh()).catch(() => undefined);
+    router.push(notificationHref(item) ?? "/dashboard/notifications");
+  };
   const crumbs = breadcrumbs(pathname);
 
   return (
@@ -153,7 +159,7 @@ export function Header({ profile, notifications, unreadCount, openAlertCount }: 
               ) : (
                 <div className="max-h-80 overflow-y-auto py-1">
                   {recent.map((item) => (
-                    <DropdownMenuItem key={item.id} className="cursor-pointer items-start gap-2.5 rounded-none px-3.5 py-2.5" onSelect={() => router.push("/dashboard/notifications")}>
+                    <DropdownMenuItem key={item.id} className="cursor-pointer items-start gap-2.5 rounded-none px-3.5 py-2.5" onSelect={() => openNotification(item)}>
                       <span aria-hidden className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", item.read ? "bg-transparent" : "bg-teal-600")} />
                       <span className="min-w-0 flex-1">
                         <span className={cn("block truncate text-[13px]", item.read ? "text-slate-600" : "font-medium text-slate-900")}>{item.title}</span>

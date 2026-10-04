@@ -17,7 +17,6 @@ import {
   Dumbbell,
   FileText,
   Globe,
-  LineChart as LineChartIcon,
   MessageSquareText,
   NotebookPen,
   Phone,
@@ -45,7 +44,6 @@ import type {
   Medication,
   PaginatedResponse,
   PatientDetailResponse,
-  ProgressResponse,
   PsychologistNote,
   RelapseSignature,
   SecureMessagesResponse,
@@ -56,7 +54,6 @@ import type {
 import { Panel, Segmented, Sparkline } from "@/components/layout/Kpi";
 import { ChartEmpty, ChartTooltipShell, ListEmpty } from "@/features/dashboard/components/overview/cards";
 import { PatientAvatar } from "@/features/dashboard/components/overview/PracticeOverview";
-import { ProgressPanel } from "@/features/patients/components/ProgressPanel";
 import { AssessmentPanel } from "@/features/assessments/components/AssessmentPanel";
 import { NotesPanel } from "@/features/notes/components/NotesPanel";
 import { SessionPanel } from "@/features/sessions/components/SessionPanel";
@@ -71,7 +68,6 @@ import { cn } from "@/lib/utils";
 
 interface PatientProfileProps {
   patient: PatientDetailResponse;
-  progress: ProgressResponse;
   journal: PaginatedResponse<JournalEntry>;
   assessments: PaginatedResponse<AssessmentListItem>;
   initialDetail?: AssessmentDetailResponse | null;
@@ -101,7 +97,6 @@ const TAB_GROUPS: TabDef[][] = [
   [
     { value: "overview", label: "Overview", icon: FileText },
     { value: "life-chart", label: "Life chart", icon: Activity },
-    { value: "progress", label: "Progress", icon: LineChartIcon },
     { value: "assessments", label: "Assessments", icon: ClipboardCheck },
     { value: "diagnosis", label: "Diagnosis", icon: Stethoscope, roles: ["PSYCHIATRIST"] },
   ],
@@ -120,12 +115,13 @@ const TAB_GROUPS: TabDef[][] = [
   ],
 ];
 
-type WellbeingMetric = "mood" | "sleep" | "anxiety" | "energy";
+// Mood, energy and focus are the patient's own 1-5 check-in scales; sleep is in hours.
+type WellbeingMetric = "mood" | "energy" | "focus" | "sleep";
 const WELLBEING: Record<WellbeingMetric, { label: string; unit: string; color: string; domain: [number, number] }> = {
-  mood: { label: "Mood", unit: "/10", color: "#0d9488", domain: [0, 10] },
+  mood: { label: "Mood", unit: "/5", color: "#0d9488", domain: [0, 5] },
+  energy: { label: "Energy", unit: "/5", color: "#0ea5e9", domain: [0, 5] },
+  focus: { label: "Focus", unit: "/5", color: "#8b5cf6", domain: [0, 5] },
   sleep: { label: "Sleep", unit: "h", color: "#6366f1", domain: [0, 12] },
-  anxiety: { label: "Anxiety", unit: "/10", color: "#f97316", domain: [0, 10] },
-  energy: { label: "Energy", unit: "/10", color: "#0ea5e9", domain: [0, 10] },
 };
 
 const tabAllowed = (tab: TabDef, role: ClinicianRole) => (!tab.roles || tab.roles.includes(role)) && !tab.hiddenFor?.includes(role);
@@ -135,7 +131,6 @@ const average = (values: number[]) => (values.length ? values.reduce((sum, value
 export function PatientProfile(props: PatientProfileProps) {
   const {
     patient,
-    progress,
     journal,
     assessments,
     initialDetail,
@@ -179,7 +174,7 @@ export function PatientProfile(props: PatientProfileProps) {
   };
 
   const status = useMemo(() => {
-    const checkins = [...lifeChart.checkins].sort((a, b) => a.checkinDate.localeCompare(b.checkinDate));
+    const checkins = [...lifeChart.checkins].sort((a, b) => a.date.localeCompare(b.date));
     const lastCheckin = checkins.at(-1) ?? null;
     const latestDrift = lifeChart.driftScores.at(-1) ?? null;
     const topAlert = [...openAlerts].sort((a, b) => RISK_META[a.severity].rank - RISK_META[b.severity].rank)[0] ?? null;
@@ -188,9 +183,9 @@ export function PatientProfile(props: PatientProfileProps) {
       lastCheckin,
       latestDrift,
       topAlert,
-      daysSinceCheckin: lastCheckin ? differenceInCalendarDays(now, new Date(lastCheckin.checkinDate)) : null,
+      daysSinceCheckin: lastCheckin ? differenceInCalendarDays(now, new Date(lastCheckin.date)) : null,
       riskLevel: latestDrift?.level ?? toRiskLevel(patient.recentActivity.find((item) => item.riskLevel)?.riskLevel),
-      moodSpark: checkins.slice(-14).map((entry) => entry.moodScore),
+      moodSpark: checkins.slice(-14).map((entry) => entry.mood),
       driftSpark: lifeChart.driftScores.slice(-14).map((entry) => entry.score),
     };
   }, [lifeChart, openAlerts, patient.recentActivity, now]);
@@ -227,7 +222,7 @@ export function PatientProfile(props: PatientProfileProps) {
               <Fact label="Last session" value={careContext.lastSessionAt ? format(new Date(careContext.lastSessionAt), "MMM d") : "—"} />
             </dl>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <Button size="sm" className="col-span-2" onClick={() => router.push("/dashboard/sessions")}>
+              <Button size="sm" className="col-span-2" onClick={() => router.push(`/dashboard/sessions?patientId=${id}`)}>
                 <CalendarPlus size={14} aria-hidden /> Schedule session
               </Button>
               <Button size="sm" variant="secondary" onClick={() => changeTab("messages")}>
@@ -266,7 +261,7 @@ export function PatientProfile(props: PatientProfileProps) {
                 label="Last check-in"
                 tone={status.daysSinceCheckin !== null && status.daysSinceCheckin > 3 ? "warning" : undefined}
                 value={status.daysSinceCheckin === null ? "—" : status.daysSinceCheckin === 0 ? "Today" : `${status.daysSinceCheckin}d ago`}
-                detail={status.lastCheckin ? `Mood ${status.lastCheckin.moodScore}/10${status.lastCheckin.sleepHours !== null ? ` · ${status.lastCheckin.sleepHours}h sleep` : ""}` : "No check-ins in 30 days"}
+                detail={status.lastCheckin ? `Mood ${status.lastCheckin.mood}/5${status.lastCheckin.sleepHours !== null ? ` · ${status.lastCheckin.sleepHours}h sleep` : ""}` : "No check-ins in 30 days"}
                 spark={status.moodSpark}
               />
               <StatusRow
@@ -377,9 +372,8 @@ export function PatientProfile(props: PatientProfileProps) {
                 )}
               </div>
             </TabsContent>
-            <TabsContent value="life-chart" className="mt-5"><LifeChartPanel data={lifeChart} /></TabsContent>
+            <TabsContent value="life-chart" className="mt-5"><LifeChartPanel key={id} patientId={id} data={lifeChart} /></TabsContent>
             <TabsContent value="assessments" className="mt-5"><AssessmentPanel patientId={id} assessments={assessments} initialAssessmentId={assessmentId ?? initialDetail?.id} initialDetail={initialDetail ?? undefined} /></TabsContent>
-            <TabsContent value="progress" className="mt-5"><ProgressPanel patientId={id} initialData={progress} /></TabsContent>
             <TabsContent value="medications" className="mt-5"><MedicationsPanel patientId={id} initialMedications={medications} canEdit={profileRole === "PSYCHIATRIST"} /></TabsContent>
             <TabsContent value="thresholds" className="mt-5"><ThresholdsPanel patientId={id} initialThresholds={thresholds} canEdit={profileRole === "PSYCHIATRIST"} /></TabsContent>
             <TabsContent value="relapse" className="mt-5"><RelapseSignaturesPanel patientId={id} initialSignatures={relapseSignatures} /></TabsContent>
@@ -434,8 +428,8 @@ function WellbeingChart({ checkins }: { checkins: LifeChartResponse["checkins"] 
 
   const { rows, stats } = useMemo(() => {
     const pick = (entry: LifeChartResponse["checkins"][number]) =>
-      metric === "mood" ? entry.moodScore : metric === "sleep" ? entry.sleepHours : metric === "anxiety" ? entry.anxietyLevel : entry.energyLevel;
-    const rows = checkins.map((entry) => ({ date: format(new Date(entry.checkinDate), "MMM d"), value: pick(entry) }));
+      metric === "mood" ? entry.mood : metric === "sleep" ? entry.sleepHours : metric === "focus" ? entry.focus : entry.energy;
+    const rows = checkins.map((entry) => ({ date: format(new Date(entry.date), "MMM d"), value: pick(entry) }));
     const values = rows.flatMap((row) => (row.value === null ? [] : [row.value]));
     const half = Math.floor(values.length / 2);
     const recent = average(values.slice(half));
@@ -452,8 +446,8 @@ function WellbeingChart({ checkins }: { checkins: LifeChartResponse["checkins"] 
   }, [checkins, metric]);
 
   const hasData = stats.avg !== null;
-  // For anxiety a rise is clinically worse; for the others a drop is.
-  const worse = stats.change !== null && (metric === "anxiety" ? stats.change > 0.3 : stats.change < -0.3);
+  // For every metric a drop is the clinically worse direction.
+  const worse = stats.change !== null && stats.change < -0.3;
 
   return (
     <Panel

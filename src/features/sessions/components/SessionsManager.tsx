@@ -67,13 +67,15 @@ function dayLabel(date: Date) {
   return format(date, "EEEE, MMM d");
 }
 
-export function SessionsManager({ initialSessions, patients }: { initialSessions: SessionListItem[]; patients: PatientListItem[] }) {
+export function SessionsManager({ initialSessions, patients, initialPatientId }: { initialSessions: SessionListItem[]; patients: PatientListItem[]; initialPatientId?: string }) {
+  // Arriving from a patient record (or a notification) opens the booking form already pointed at that patient.
+  const preselected = patients.find((patient) => patient.id === initialPatientId)?.id;
   const [sessions, setSessions] = useState(initialSessions);
   const now = useNow();
   const [view, setView] = useState<View>("upcoming");
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(Boolean(preselected));
   const [completionSession, setCompletionSession] = useState<SessionListItem | null>(null);
-  const form = useForm<SessionFormValues>({ resolver: zodResolver(sessionSchema), defaultValues: defaultSession(patients[0]?.id ?? "") });
+  const form = useForm<SessionFormValues>({ resolver: zodResolver(sessionSchema), defaultValues: defaultSession(preselected ?? patients[0]?.id ?? "") });
   const completionForm = useForm<CompletionFormValues>({ resolver: zodResolver(completionSchema), defaultValues: { summary: "", followUpRequired: false, followUpDate: "" } });
   const followUpRequired = useWatch({ control: completionForm.control, name: "followUpRequired" });
 

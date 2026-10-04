@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ChevronsUpDown,
   ClipboardCheck,
+  Inbox,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
@@ -20,6 +21,7 @@ import {
   PanelLeftOpen,
   Settings,
   ShieldPlus,
+  TrendingUp,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -38,13 +40,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-type NavItem = { icon: LucideIcon; label: string; path: string; badgeKey?: "alerts" | "notifications" };
+type NavItem = { icon: LucideIcon; label: string; path: string; badgeKey?: "alerts" | "notifications" | "requests" };
 
 const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Workspace",
     items: [
       { icon: LayoutDashboard, label: "Overview", path: "/dashboard/overview" },
+      { icon: Inbox, label: "Requests", path: "/dashboard/requests", badgeKey: "requests" },
       { icon: AlertTriangle, label: "Alerts", path: "/dashboard/alerts", badgeKey: "alerts" },
       { icon: UsersRound, label: "Patients", path: "/dashboard/patients" },
       { icon: CalendarDays, label: "Sessions", path: "/dashboard/sessions" },
@@ -55,6 +58,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { icon: ClipboardCheck, label: "Assessments", path: "/dashboard/assessments" },
       { icon: BarChart3, label: "Weekly reports", path: "/dashboard/reports" },
+      { icon: TrendingUp, label: "Monthly progress", path: "/dashboard/monthly" },
       { icon: NotebookPen, label: "Notes", path: "/dashboard/notes" },
     ],
   },
@@ -68,7 +72,7 @@ const NAV_GROUPS: Array<{ label: string; items: NavItem[] }> = [
 ];
 
 const HIDDEN_BY_ROLE: Partial<Record<ClinicianRole, string[]>> = {
-  CARE_COORDINATOR: ["/dashboard/overview", "/dashboard/alerts", "/dashboard/patients", "/dashboard/assessments", "/dashboard/reports", "/dashboard/notes"],
+  CARE_COORDINATOR: ["/dashboard/overview", "/dashboard/alerts", "/dashboard/patients", "/dashboard/assessments", "/dashboard/reports", "/dashboard/monthly", "/dashboard/notes"],
   NURSE: ["/dashboard/assessments", "/dashboard/reports", "/dashboard/notes"],
 };
 
@@ -90,7 +94,7 @@ export function initialsOf(name: string) {
 
 interface SidebarProps {
   profile: PsychologistProfile;
-  counts: { alerts: number; notifications: number };
+  counts: { alerts: number; notifications: number; requests: number };
   /** Drawer variant always renders expanded, on a white surface. */
   variant?: "rail" | "drawer";
 }
@@ -207,7 +211,7 @@ export function Sidebar({ profile, counts, variant = "rail" }: SidebarProps) {
                             <span className="relative">
                               <item.icon size={16} strokeWidth={active ? 2.2 : 1.85} aria-hidden className={active ? "text-teal-700" : "text-slate-500"} />
                               {collapsed && badge > 0 && (
-                                <span aria-hidden className={cn("absolute -right-1 -top-1 h-2 w-2 rounded-full ring-2 ring-slate-50", item.badgeKey === "alerts" ? "bg-red-500" : "bg-teal-600")} />
+                                <span aria-hidden className={cn("absolute -right-1 -top-1 h-2 w-2 rounded-full ring-2 ring-slate-50", item.badgeKey === "alerts" ? "bg-red-500" : item.badgeKey === "requests" ? "bg-amber-500" : "bg-teal-600")} />
                               )}
                             </span>
                             {!collapsed && <span className="truncate">{item.label}</span>}
@@ -215,7 +219,7 @@ export function Sidebar({ profile, counts, variant = "rail" }: SidebarProps) {
                               <span
                                 className={cn(
                                   "tabular ml-auto min-w-5 rounded-md px-1.5 text-center text-[11px] font-semibold leading-5",
-                                  item.badgeKey === "alerts" ? "bg-red-500 text-white" : "bg-slate-200/80 text-slate-700",
+                                  item.badgeKey === "alerts" ? "bg-red-500 text-white" : item.badgeKey === "requests" ? "bg-amber-500 text-white" : "bg-slate-200/80 text-slate-700",
                                 )}
                               >
                                 {badge > 99 ? "99+" : badge}

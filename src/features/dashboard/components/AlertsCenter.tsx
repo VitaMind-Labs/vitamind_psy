@@ -54,7 +54,7 @@ function formatDuration(ms: number) {
   return { value: Math.round(hours / 24), unit: "d" };
 }
 
-export function AlertsCenter({ initialData, initialStatus = "ALL" }: { initialData: PaginatedResponse<ClinicalAlert>; initialStatus?: StatusFilter }) {
+export function AlertsCenter({ initialData, initialStatus = "ALL", initialAlertId }: { initialData: PaginatedResponse<ClinicalAlert>; initialStatus?: StatusFilter; initialAlertId?: string }) {
   const router = useRouter();
   const now = useNow();
   const [alerts, setAlerts] = useState(initialData.data);
@@ -62,7 +62,7 @@ export function AlertsCenter({ initialData, initialStatus = "ALL" }: { initialDa
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [severityFilter, setSeverityFilter] = useState<"ALL" | RiskLevel>("ALL");
   const [query, setQuery] = useState("");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialAlertId ?? null);
   const [busy, setBusy] = useState<string | null>(null);
   const seenAlerts = useRef(new Set(initialData.data.map((alert) => alert.id)));
 

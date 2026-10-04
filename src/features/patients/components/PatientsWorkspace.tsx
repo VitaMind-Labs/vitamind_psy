@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { differenceInYears, format, formatDistanceToNowStrict } from "date-fns";
 import {
   Activity,
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpDown,
   ArrowUpRight,
@@ -294,9 +295,12 @@ function DirectoryTable({ rows, query, onSort }: { rows: PatientListItem[]; quer
         <tr className="border-b border-slate-100">
           <SortHeader label="Patient" field="nickname" query={query} onSort={onSort} className="pl-5" />
           <th scope="col" className={TH}>Status</th>
+          <th scope="col" className={TH}>Triage</th>
           <th scope="col" className={TH}>Age</th>
+          <th scope="col" className={cn(TH, "hidden lg:table-cell")}>Last check-in</th>
           <SortHeader label="Last activity" field="lastActivityAt" query={query} onSort={onSort} />
           <SortHeader label="Last assessment" field="lastAssessmentAt" query={query} onSort={onSort} />
+          <th scope="col" className={cn(TH, "hidden xl:table-cell")}>Shared with you</th>
           <th scope="col" className="w-12 pr-4"><span className="sr-only">Actions</span></th>
         </tr>
       </thead>
@@ -315,9 +319,33 @@ function DirectoryTable({ rows, query, onSort }: { rows: PatientListItem[]; quer
             <td className="px-3 py-3">
               <Badge variant={STATUS_META[patient.status].variant} dot>{STATUS_META[patient.status].label}</Badge>
             </td>
+            <td className="px-3 py-3">
+              <span className="flex items-center gap-2">
+                {patient.trafficLight ? <TrafficLightBadge light={patient.trafficLight} /> : <span className="text-xs text-slate-400" title="The patient does not share mood data">Not shared</span>}
+                {(patient.openAlerts ?? 0) > 0 && (
+                  <span className="inline-flex items-center gap-0.5 rounded-md bg-red-50 px-1.5 py-0.5 text-[11px] font-semibold text-red-700" title={`${patient.openAlerts} open alert${patient.openAlerts === 1 ? "" : "s"}`}>
+                    <AlertTriangle size={11} aria-hidden /> {patient.openAlerts}
+                  </span>
+                )}
+              </span>
+            </td>
             <td className="tabular px-3 py-3 text-slate-600">{patient.dateOfBirth ? differenceInYears(now, new Date(patient.dateOfBirth)) : "—"}</td>
+            <td className="hidden px-3 py-3 lg:table-cell">{patient.sharing?.mood ? <RelativeDate value={patient.lastCheckinAt ?? null} /> : <span className="text-xs text-slate-400">—</span>}</td>
             <td className="px-3 py-3"><RelativeDate value={patient.lastActivityAt} /></td>
             <td className="px-3 py-3"><RelativeDate value={patient.lastAssessmentAt} /></td>
+            <td className="hidden px-3 py-3 xl:table-cell">
+              {patient.sharing ? (
+                <span className="flex flex-wrap gap-1">
+                  {([["mood", patient.sharing.mood, "Mood"], ["sleep", patient.sharing.sleep, "Sleep"], ["diagnostics", patient.sharing.diagnostics, "Orientation"], ["medication", patient.sharing.medication, "Meds"], ["journal", patient.sharing.journal !== "NONE", patient.sharing.journal === "FULL" ? "Journal" : "Journal excerpts"]] as const)
+                    .filter(([, on]) => on)
+                    .map(([key, , label]) => (
+                      <span key={key} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">{label}</span>
+                    ))}
+                </span>
+              ) : (
+                <span className="text-xs text-slate-400">—</span>
+              )}
+            </td>
             <td className="py-3 pr-4 text-right">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
