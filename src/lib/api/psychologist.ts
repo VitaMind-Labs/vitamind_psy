@@ -105,6 +105,7 @@ export interface AssessmentReviewDto {
 export interface CreateNoteDto {
     title?: string;
     content: string;
+    weeklyReportId?: string;
 }
 
 export interface UpdateNoteDto {
@@ -266,6 +267,8 @@ export interface WeeklyReport {
     releasedToPatientAt: string | null;
     reminderSentAt: string | null;
     escalatedAt: string | null;
+    acknowledgedBy?: { id: string; firstName: string; lastName: string; clinicalRole: ClinicianRole } | null;
+    notes?: { id: string; title: string | null; content: string; createdAt: string }[];
 }
 
 export interface ConsentResponse {
