@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { WeeklyReport } from "@/lib/api/psychologist";
-import { acknowledgeWeeklyReportAction, annotateWeeklyReportAction } from "@/features/reports/actions/weekly-reports";
+import { acknowledgeWeeklyReportAction, addReportPrivateNoteAction, annotateWeeklyReportAction } from "@/features/reports/actions/weekly-reports";
 import { exportWeeklyReportAction } from "@/features/clinical/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,7 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
   const [expanded, setExpanded] = useState<string | null>(linked?.id ?? null);
   const [busy, setBusy] = useState<string | null>(null);
   const [noteReport, setNoteReport] = useState<WeeklyReport | null>(null);
+  const [noteKind, setNoteKind] = useState<"private" | "patient">("private");
   const noteForm = useForm<NoteValues>({ resolver: zodResolver(noteSchema), defaultValues: { content: "" } });
 
   const summary = useMemo(() => {
@@ -116,17 +117,23 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
     }
   };
 
-  const openNote = (report: WeeklyReport) => {
+  const openNote = (report: WeeklyReport, kind: "private" | "patient") => {
+    setNoteKind(kind);
     setNoteReport(report);
-    noteForm.reset({ content: report.clinicianNote ?? "" });
+    noteForm.reset({ content: kind === "patient" ? (report.clinicianNote ?? "") : "" });
   };
 
   const saveNote = noteForm.handleSubmit(async (values) => {
     if (!noteReport) return;
     try {
-      replace(await annotateWeeklyReportAction(noteReport.id, values.content));
+      if (noteKind === "patient") {
+        replace(await annotateWeeklyReportAction(noteReport.id, values.content));
+      } else {
+        const created = await addReportPrivateNoteAction(noteReport.userId, noteReport.id, values.content);
+        replace({ ...noteReport, notes: [{ id: created.id, title: created.title, content: values.content, createdAt: created.createdAt }, ...(noteReport.notes ?? [])] });
+      }
       setNoteReport(null);
-      toast.success("Clinical note saved");
+      toast.success(noteKind === "patient" ? "Note saved · shown to the patient with the released report" : "Private note saved");
     } catch {
       toast.error("Unable to save the note");
     }
@@ -195,7 +202,7 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
                           ) : (
                             <TrafficLightBadge light={report.trafficLight} />
                           )}
-                          {reviewed ? <Badge variant="success">Released</Badge> : report.reminderSentAt ? <Badge variant="warning">72h reminder sent</Badge> : null}
+                          {reviewed ? <Badge variant="success">{report.acknowledgedBy ? `Validated by ${report.acknowledgedBy.firstName} ${report.acknowledgedBy.lastName}` : "Released"}</Badge> : report.reminderSentAt ? <Badge variant="warning">72h reminder sent</Badge> : null}
                         </div>
                         <p className="mt-0.5 truncate text-[13px] text-slate-600">{report.headline || "Weekly summary"}</p>
                       </div>
@@ -275,15 +282,25 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
                               )}
                               {report.clinicianNote && (
                                 <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3">
-                                  <p className="text-xs font-semibold text-slate-900">Your private note</p>
+                                  <p className="text-xs font-semibold text-slate-900">Note for the patient</p>
                                   <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{report.clinicianNote}</p>
+                                  <p className="mt-1 text-[11px] text-slate-500">{reviewed ? "Visible to the patient." : "Becomes visible to the patient when you release the report."}</p>
                                 </div>
                               )}
+                              {(report.notes ?? []).map((note) => (
+                                <div key={note.id} className="rounded-xl border border-slate-200/80 bg-white p-3">
+                                  <p className="text-xs font-semibold text-slate-900">Your private note · {format(new Date(note.createdAt), "MMM d")}</p>
+                                  <p className="mt-1 whitespace-pre-line text-sm text-slate-700">{note.content}</p>
+                                </div>
+                              ))}
                             </div>
                           </div>
                           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50/50 px-5 py-3">
-                            <Button size="sm" variant="ghost" onClick={() => openNote(report)}>
-                              <MessageSquareText size={14} aria-hidden /> {report.clinicianNote ? "Edit note" : "Add note"}
+                            <Button size="sm" variant="ghost" onClick={() => openNote(report, "private")}>
+                              <MessageSquareText size={14} aria-hidden /> Private note
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => openNote(report, "patient")}>
+                              <MessageSquareText size={14} aria-hidden /> {report.clinicianNote ? "Edit note for patient" : "Note for patient"}
                             </Button>
                             <Button size="sm" variant="secondary" onClick={() => void exportReport(report.id)}>
                               <Download size={14} aria-hidden /> Export PDF
@@ -333,8 +350,12 @@ export function WeeklyReports({ initialReports, initialReportId }: { initialRepo
       <Dialog open={noteReport !== null} onOpenChange={(open) => !open && setNoteReport(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Private clinical note</DialogTitle>
-            <DialogDescription>Context for your next conversation. Not included in the patient release.</DialogDescription>
+            <DialogTitle>{noteKind === "patient" ? "Note for the patient" : "Private clinical note"}</DialogTitle>
+            <DialogDescription>
+              {noteKind === "patient"
+                ? "Shown to the patient with their weekly report once it is released."
+                : "Context for your next conversation. Never shown to the patient."}
+            </DialogDescription>
           </DialogHeader>
           <Form {...noteForm}>
             <form onSubmit={saveNote} className="space-y-4">
