@@ -161,7 +161,9 @@ export default function AuthScreen() {
           </form>
 
           <p className="text-center text-xs text-slate-500">
-            Forgot your password? Contact your clinic administrator.
+            <Link href="/forgot-password" className="font-medium text-teal-700 underline-offset-4 hover:text-teal-800 hover:underline">
+              Forgot your password?
+            </Link>
           </p>
 
           <div className="border-t border-slate-100 pt-6 text-center text-sm text-slate-600">
