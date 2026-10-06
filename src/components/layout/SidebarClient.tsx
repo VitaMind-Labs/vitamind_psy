@@ -44,7 +44,7 @@ export function SidebarClient({ children, profile, notifications, unreadCount, o
   }, [mobileOpen, closeMobile]);
 
   return (
-    <div className="min-h-dvh bg-[#f4f5f7] md:h-dvh md:overflow-hidden">
+    <div className="min-h-dvh bg-[#f4f5f7] md:fixed md:inset-0 md:h-auto md:min-h-0 md:overflow-hidden">
       {/* Desktop rail — sits on the app canvas, no border */}
       <aside
         aria-label="Primary navigation"
