@@ -190,6 +190,19 @@ export function PatientProfile(props: PatientProfileProps) {
     };
   }, [lifeChart, openAlerts, patient.recentActivity, now]);
 
+  // What the patient does not share: those sections stay empty, with a clear reason instead of an error.
+  const sharing = patient.careContext.sharing;
+  const notShared = sharing
+    ? [
+        !sharing.diagnostics && "Mira assessments",
+        !sharing.mood && "mood check-ins",
+        !sharing.sleep && "sleep",
+        !sharing.medication && "medication",
+        !sharing.exercises && "exercises",
+        sharing.journal === "NONE" && "journal",
+      ].filter((item): item is string => Boolean(item))
+    : [];
+
   const age = info.dateOfBirth ? differenceInYears(now, new Date(info.dateOfBirth)) : null;
 
   return (
@@ -197,6 +210,12 @@ export function PatientProfile(props: PatientProfileProps) {
       <Link href="/dashboard/patients" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:text-slate-900">
         <ArrowLeft size={14} aria-hidden /> Patients
       </Link>
+
+      {notShared.length > 0 && (
+        <div role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] leading-5 text-amber-900">
+          <strong className="font-semibold">Not shared by the patient:</strong> {notShared.join(", ")}. These sections stay empty. Safety alerts and crisis signals still reach you.
+        </div>
+      )}
 
       <div className="grid items-start gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
         {/* ---------- Left: clinical summary ---------- */}
@@ -367,13 +386,23 @@ export function PatientProfile(props: PatientProfileProps) {
                 </Panel>
                 {canWriteNotes && (
                   <Panel title="Patient journal" description="Entries the patient chose to share">
-                    <JournalPanel patientId={id} initialData={journal} />
+                    {sharing?.journal === "NONE" ? (
+                      <ListEmpty title="Journal not shared" hint="The patient has not shared their journal with you. Safety alerts still reach you." />
+                    ) : (
+                      <JournalPanel patientId={id} initialData={journal} />
+                    )}
                   </Panel>
                 )}
               </div>
             </TabsContent>
             <TabsContent value="life-chart" className="mt-5"><LifeChartPanel key={id} patientId={id} data={lifeChart} /></TabsContent>
-            <TabsContent value="assessments" className="mt-5"><AssessmentPanel patientId={id} assessments={assessments} initialAssessmentId={assessmentId ?? initialDetail?.id} initialDetail={initialDetail ?? undefined} /></TabsContent>
+            <TabsContent value="assessments" className="mt-5">
+              {sharing?.diagnostics === false ? (
+                <ListEmpty title="Assessments not shared" hint="The patient has not shared their Mira assessments with you." />
+              ) : (
+                <AssessmentPanel patientId={id} assessments={assessments} initialAssessmentId={assessmentId ?? initialDetail?.id} initialDetail={initialDetail ?? undefined} />
+              )}
+            </TabsContent>
             <TabsContent value="medications" className="mt-5"><MedicationsPanel patientId={id} initialMedications={medications} canEdit={profileRole === "PSYCHIATRIST"} /></TabsContent>
             <TabsContent value="thresholds" className="mt-5"><ThresholdsPanel patientId={id} initialThresholds={thresholds} canEdit={profileRole === "PSYCHIATRIST"} /></TabsContent>
             <TabsContent value="relapse" className="mt-5"><RelapseSignaturesPanel patientId={id} initialSignatures={relapseSignatures} /></TabsContent>

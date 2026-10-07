@@ -36,7 +36,7 @@ const profileSchema = z.object({
 });
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-const profileDefaults = (profile: PsychologistProfile): ProfileFormValues => ({
+const profileDefaults = (profile: Pick<PsychologistProfile, 'firstName' | 'lastName' | 'phone' | 'specialties' | 'avatarUrl'>): ProfileFormValues => ({
   firstName: profile.firstName ?? "",
   lastName: profile.lastName ?? "",
   phone: profile.phone ?? "",

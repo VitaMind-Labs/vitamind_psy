@@ -1,14 +1,14 @@
-# VitaMind Psy
+# SynQ Psy
 
-VitaMind Psy is the psychologist-facing workspace of the VitaMind platform. It is designed to help mental health professionals manage patient records, clinical assessments, session workflows, progress tracking, and practice operations in a secure and structured environment.
+SynQ Psy is the psychologist-facing workspace of the SynQ platform. It is designed to help mental health professionals manage patient records, clinical assessments, session workflows, progress tracking, and practice operations in a secure and structured environment.
 
 The application is built around a calm, focused clinical experience that supports care delivery while keeping the workflow clear and operationally efficient. It connects clinical workflows, patient information, psychological assessments, and AI-assisted insights within a unified professional environment.
 
-> **VitaMind Psy is a clinical support platform. It does not replace psychologists, psychiatrists, emergency services, or formal clinical diagnosis.**
+> **SynQ Psy is a clinical support platform. It does not replace psychologists, psychiatrists, emergency services, or formal clinical diagnosis.**
 
 ## Why this product exists
 
-VitaMind Psy is intended for clinicians, psychologists, and care teams who need a dedicated digital space to:
+SynQ Psy is intended for clinicians, psychologists, and care teams who need a dedicated digital space to:
 
 - Manage patient information and clinical records
 - Review patient history and progress over time
@@ -32,7 +32,7 @@ This platform supports clinical workflows while preserving professional judgment
 - Coverage and scheduling visibility
 - Responsive dashboard navigation for desktop and mobile use
 
-## What VitaMind Psy Provides
+## What SynQ Psy Provides
 
 The application brings multiple clinical workflows together in one workspace.
 
@@ -70,7 +70,7 @@ The assessment workspace provides access to:
 
 ### Progress Tracking
 
-VitaMind Psy provides visual tools for following patient progress, including:
+SynQ Psy provides visual tools for following patient progress, including:
 
 - Progress charts
 - Life-chart views
@@ -99,15 +99,15 @@ The platform includes:
 
 The dashboard provides an overview of the practice with metrics and clinical alerts designed to help psychologists monitor their overall activity.
 
-## AI & VitaMind Psy
+## AI & SynQ Psy
 
-VitaMind Psy is designed to become the professional interface for VitaMind's AI-assisted mental-health ecosystem.
+SynQ Psy is designed to become the professional interface for SynQ's AI-assisted mental-health ecosystem.
 
-One of the core AI components being developed within VitaMind is **Mira**, an Arabic conversational assessment agent.
+One of the core AI components being developed within SynQ is **Mira**, an Arabic conversational assessment agent.
 
 ## Architecture
 
-VitaMind Psy follows a feature-oriented Next.js architecture.
+SynQ Psy follows a feature-oriented Next.js architecture.
 
 ```text
                     ┌──────────────────────┐
@@ -133,7 +133,7 @@ VitaMind Psy follows a feature-oriented Next.js architecture.
                          API Boundary
                                │
                                ▼
-                      VitaMind Backend API
+                      SynQ Backend API
 ```
 
 The frontend API boundary is organized under:
@@ -207,18 +207,18 @@ Feature modules generally keep their actions, components, hooks, and supporting 
 
 ## Prerequisites
 
-Before running VitaMind Psy locally, make sure you have:
+Before running SynQ Psy locally, make sure you have:
 
 - **Node.js 20+**
 - **npm 10+**
-- Access to the **VitaMind API** when working with live data
+- Access to the **SynQ API** when working with live data
 
 ## Getting Started
 
 Clone the repository:
 
 ```bash
-git clone https://github.com/VitaMind-Labs/vitamind_psy.git
+git clone https://github.com/SynQ-Labs/vitamind_psy.git
 cd vitamind_psy
 ```
 
@@ -312,7 +312,7 @@ to the repository.
 
 ## API Integration
 
-The frontend communicates with the VitaMind backend through a dedicated API boundary.
+The frontend communicates with the SynQ backend through a dedicated API boundary.
 
 ```text
 src/lib/api/
@@ -334,11 +334,11 @@ This separation keeps backend communication independent from the presentation la
 
 ## Clinical & Security Considerations
 
-VitaMind Psy handles workflows related to sensitive mental-health information.
+SynQ Psy handles workflows related to sensitive mental-health information.
 
 Therefore:
 
-- VitaMind Psy is a **clinical support interface**, not an autonomous diagnostic system.
+- SynQ Psy is a **clinical support interface**, not an autonomous diagnostic system.
 - Clinical decisions remain under the responsibility of qualified professionals.
 - Do not use real patient information in local development.
 - Do not include patient information in screenshots, fixtures, tests, or pull requests.
@@ -395,7 +395,7 @@ Example commit workflow:
 
 ```bash
 git add README.md .gitignore .claudeignore
-git commit -m "docs: update VitaMind Psy documentation"
+git commit -m "docs: update SynQ Psy documentation"
 git push origin HEAD:dev
 ```
 
@@ -403,13 +403,13 @@ These commands are examples and should only be executed after reviewing the chan
 
 ## Future Direction
 
-VitaMind Psy is being developed as part of a larger AI-assisted mental-health ecosystem.
+SynQ Psy is being developed as part of a larger AI-assisted mental-health ecosystem.
 
 Future capabilities may include:
 
 ### AI-Assisted Clinical Insights
 
-AI systems could help organize information collected throughout the VitaMind platform and present structured insights to professionals.
+AI systems could help organize information collected throughout the SynQ platform and present structured insights to professionals.
 
 ### Psychological Assessment Integration
 
@@ -421,17 +421,17 @@ Patient progress, assessments, sessions, and observations can be brought togethe
 
 ### Patient–Psychologist Continuity
 
-Information gathered through VitaMind's patient-facing experiences can support the professional workflow while keeping clinical decisions with the psychologist.
+Information gathered through SynQ's patient-facing experiences can support the professional workflow while keeping clinical decisions with the psychologist.
 
 ### Arabic Mental-Health AI
 
-VitaMind's AI layer, including **Mira**, is being developed with Arabic-language interaction as an important component of the platform.
+SynQ's AI layer, including **Mira**, is being developed with Arabic-language interaction as an important component of the platform.
 
 ## Project Status
 
-**VitaMind Psy is under active development.**
+**SynQ Psy is under active development.**
 
-The current application provides the psychologist-facing foundation of the VitaMind ecosystem, while AI-assisted assessment and other intelligent capabilities are being developed as part of the broader platform.
+The current application provides the psychologist-facing foundation of the SynQ ecosystem, while AI-assisted assessment and other intelligent capabilities are being developed as part of the broader platform.
 
 ## License
 
@@ -439,8 +439,8 @@ No public license has currently been declared for this project.
 
 Unless the project owners explicitly state otherwise, treat the source code as **proprietary** and do not assume permission to reproduce, distribute, or commercially use it.
 
-## VitaMind Labs
+## SynQ Labs
 
 **Building human-centered AI for mental health.**
 
-**VitaMind Psy** — *Connecting psychological care, intelligent technology, and professional insight.*
+**SynQ Psy** — *Connecting psychological care, intelligent technology, and professional insight.*

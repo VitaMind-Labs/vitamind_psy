@@ -6,7 +6,7 @@ import "./globals.css";
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
 
 export const metadata: Metadata = {
-  title: { default: "VitaMind Psy", template: "%s | VitaMind Psy" },
+  title: { default: "SynQ Psy", template: "%s | SynQ Psy" },
   description: "Clinical workspace for psychologists and psychiatrists.",
   icons: {
     icon: "/logo.svg",
