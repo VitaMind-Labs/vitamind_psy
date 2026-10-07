@@ -36,7 +36,7 @@ export default async function OverviewPage() {
               <span className="block text-sm font-semibold text-amber-950">
                 {pendingRequests} patient request{pendingRequests === 1 ? "" : "s"} waiting for your answer
               </span>
-              <span className="block text-xs text-amber-900/70">The VitaMind team proposed {pendingRequests === 1 ? "a patient" : "patients"} to you. Accept or decline to start care.</span>
+              <span className="block text-xs text-amber-900/70">The SynQ team proposed {pendingRequests === 1 ? "a patient" : "patients"} to you. Accept or decline to start care.</span>
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-amber-900">

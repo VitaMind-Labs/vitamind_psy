@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import ForgotPasswordScreen from "@/features/auth/components/ForgotPasswordScreen";
 
 export const metadata: Metadata = {
-  title: "Forgot password | VitaMind",
-  description: "Request a link to reset your VitaMind clinician password.",
+  title: "Forgot password | SynQ",
+  description: "Request a link to reset your SynQ clinician password.",
   robots: { index: false, follow: false },
 };
 

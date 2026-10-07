@@ -97,7 +97,7 @@ export function PsyTwoFactorSetup({
   const download = () => {
     if (!backupCodes?.length) return;
     const body = [
-      "VitaMind — two-factor recovery codes",
+      "SynQ — two-factor recovery codes",
       "Each code signs you in once if you lose your authenticator. Store them somewhere safe.",
       "",
       ...backupCodes,

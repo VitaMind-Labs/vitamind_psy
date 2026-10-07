@@ -158,13 +158,14 @@ export function Sidebar({ profile, counts, variant = "rail" }: SidebarProps) {
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-transparent">
               <Image
                 src="/logo.svg"
-                alt="VitaMind"
+                alt=""
                 width={44}
                 height={44}
                 className="h-11 w-11 bg-transparent object-contain"
                 priority
               />
             </span>
+            {!collapsed && <span className="shrink-0 text-sm font-semibold text-slate-900">SynQ</span>}
           </Link>
           {!collapsed && variant === "rail" && (
             <button

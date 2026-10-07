@@ -28,7 +28,7 @@ const VIEWS: ReadonlyArray<{ value: AssignmentRequestView; label: string }> = [
 ];
 
 const STEPS = [
-  { icon: UserRoundPlus, title: "The VitaMind team proposes a patient", text: "You see a pseudonymous code and a nickname. Nothing clinical." },
+  { icon: UserRoundPlus, title: "The SynQ team proposes a patient", text: "You see a pseudonymous code and a nickname. Nothing clinical." },
   { icon: UserCheck, title: "You accept or decline", text: "Decline if your caseload is full or the match is wrong: the team will route the patient elsewhere." },
   { icon: ShieldCheck, title: "The patient consents", text: "They choose what to share and accept the 24/7 notice. Care starts, and the patient appears in your list." },
 ];
@@ -64,7 +64,7 @@ export function RequestsInbox({ list, view }: { list: AssignmentRequestList; vie
     setBusyId(declining.assignmentId);
     try {
       await declineAssignmentRequest(declining.assignmentId, reason.trim());
-      toast.success(`${declining.patient.patientCode} declined`, { description: "The VitaMind team was told to route the patient elsewhere." });
+      toast.success(`${declining.patient.patientCode} declined`, { description: "The SynQ team was told to route the patient elsewhere." });
       setDeclining(null);
       setReason("");
       refresh();
@@ -82,7 +82,7 @@ export function RequestsInbox({ list, view }: { list: AssignmentRequestList; vie
       <DashboardPageHeader
         eyebrow="Practice"
         title="Patient requests"
-        description="Patients the VitaMind team proposes to you. Answer before care can start; the patient is only asked once you accept."
+        description="Patients the SynQ team proposes to you. Answer before care can start; the patient is only asked once you accept."
       />
 
       <KpiGrid className="xl:grid-cols-3">
@@ -176,7 +176,7 @@ export function RequestsInbox({ list, view }: { list: AssignmentRequestList; vie
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Decline {declining?.patient.patientCode}?</DialogTitle>
-            <DialogDescription>The VitaMind team sees your reason and will route the patient to another clinician. The patient is not told.</DialogDescription>
+            <DialogDescription>The SynQ team sees your reason and will route the patient to another clinician. The patient is not told.</DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
             <label htmlFor="decline-reason" className="text-[13px] font-medium text-slate-800">Reason</label>

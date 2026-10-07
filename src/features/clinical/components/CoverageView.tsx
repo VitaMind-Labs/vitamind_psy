@@ -243,7 +243,7 @@ export function CoverageView({ initialCoverage, colleagues, canEdit, currentUser
                           {colleagues.filter((c) => c.id !== watchedAbsent).map((c) => <SelectItem key={c.id} value={c.id}>{personName(c)}</SelectItem>)}
                         </SelectContent>
                       </Select>
-                      <FormDescription>{colleagues.length === 0 ? "Cover is arranged inside a clinic. Ask the VitaMind team to attach you to one." : "Only active clinicians of your clinic can cover."}</FormDescription>
+                      <FormDescription>{colleagues.length === 0 ? "Cover is arranged inside a clinic. Ask the SynQ team to attach you to one." : "Only active clinicians of your clinic can cover."}</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )} />

@@ -167,7 +167,7 @@ export default function AuthScreen() {
           </p>
 
           <div className="border-t border-slate-100 pt-6 text-center text-sm text-slate-600">
-            New to VitaMind?{" "}
+            New to SynQ?{" "}
             <Link href="/signup" className="font-semibold text-teal-700 underline-offset-4 hover:text-teal-800 hover:underline">
               Request clinician access
             </Link>

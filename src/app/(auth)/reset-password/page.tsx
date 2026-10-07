@@ -3,8 +3,8 @@ import ResetPasswordScreen from "@/features/auth/components/ResetPasswordScreen"
 import { passwordResetApi } from "@/lib/api/password-reset";
 
 export const metadata: Metadata = {
-  title: "Reset password | VitaMind",
-  description: "Choose a new password for your VitaMind clinician account.",
+  title: "Reset password | SynQ",
+  description: "Choose a new password for your SynQ clinician account.",
   robots: { index: false, follow: false },
   // The link carries a one-time secret: it must never leave in a Referer header.
   referrer: "no-referrer",

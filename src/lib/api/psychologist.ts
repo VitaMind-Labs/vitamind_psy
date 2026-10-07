@@ -309,6 +309,9 @@ export interface RelapseSignature {
     hits?: Array<{ id: string; detectedAt: string; evidence: Record<string, unknown> | null }>;
 }
 
+/** What the API accepts when creating or changing a relapse signature (never the server-managed id, user or hits). */
+export type RelapseSignatureInput = Partial<Pick<RelapseSignature, 'label' | 'description' | 'metric' | 'keywords' | 'source' | 'isActive'>>;
+
 export interface Medication {
     id: string;
     userId: string;
@@ -320,6 +323,9 @@ export interface Medication {
     endDate: string | null;
     isActive: boolean;
 }
+
+/** What the API accepts when changing a medication (never the server-managed id or user). */
+export type MedicationInput = Partial<Pick<Medication, 'name' | 'dosage' | 'frequency' | 'instructions' | 'startDate' | 'endDate' | 'isActive'>>;
 
 export interface TimelineEvent {
     id: string;
@@ -561,6 +567,8 @@ export interface PatientDetailResponse {
     };
     careContext: {
         assignedAt: string;
+        /** What the patient agreed to share with this clinician. Absent on older responses. */
+        sharing?: PatientSharing;
         lastSessionAt: string | null;
         nextSessionAt: string | null;
     };
@@ -789,7 +797,8 @@ export const psychologistApi = {
 
     getMe: () => apiClient<PsychologistProfile>('/v1/psychologist/me'),
     updateMe: (dto: UpdatePsychologistDto) =>
-        apiClient<{ message: string; psychologist: PsychologistProfile }>('/v1/psychologist/me', {
+        // The API answers with the fields it just saved, not the whole profile.
+        apiClient<{ message: string; psychologist: Pick<PsychologistProfile, 'id' | 'firstName' | 'lastName' | 'phone' | 'specialties' | 'avatarUrl'> }>('/v1/psychologist/me', {
             method: 'PATCH',
             body: JSON.stringify(dto),
         }),
@@ -807,13 +816,13 @@ export const psychologistApi = {
     getLifeChart: (patientId: string, filters?: PatientDateRangeQueryDto) => apiClient<LifeChartResponse>(`/v1/psychologist/patients/${patientId}/life-chart${queryString(filters)}`),
     getConsent: (patientId: string) => apiClient<ConsentResponse>(`/v1/psychologist/patients/${patientId}/consent`),
     getThresholds: (patientId: string) => apiClient<{ data: ThresholdItem[] }>(`/v1/psychologist/patients/${patientId}/thresholds`),
-    updateThresholds: (patientId: string, thresholds: ThresholdItem[]) => apiClient<{ data: ThresholdItem[] }>(`/v1/psychologist/patients/${patientId}/thresholds`, { method: 'PUT', body: JSON.stringify({ thresholds }) }),
+    updateThresholds: (patientId: string, thresholds: ThresholdItem[]) => apiClient<{ data: ThresholdItem[] }>(`/v1/psychologist/patients/${patientId}/thresholds`, { method: 'PUT', body: JSON.stringify({ thresholds: thresholds.map(({ metric, value, windowDays, severity, isActive }) => ({ metric, value, windowDays, severity, isActive })) }) }),
     getRelapseSignatures: (patientId: string) => apiClient<{ data: RelapseSignature[] }>(`/v1/psychologist/patients/${patientId}/relapse-signature`),
-    createRelapseSignature: (patientId: string, dto: Partial<RelapseSignature>) => apiClient<RelapseSignature>(`/v1/psychologist/patients/${patientId}/relapse-signature`, { method: 'POST', body: JSON.stringify(dto) }),
-    updateRelapseSignature: (patientId: string, signatureId: string, dto: Partial<RelapseSignature>) => apiClient<RelapseSignature>(`/v1/psychologist/patients/${patientId}/relapse-signature/${signatureId}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+    createRelapseSignature: (patientId: string, dto: RelapseSignatureInput) => apiClient<RelapseSignature>(`/v1/psychologist/patients/${patientId}/relapse-signature`, { method: 'POST', body: JSON.stringify(dto) }),
+    updateRelapseSignature: (patientId: string, signatureId: string, dto: RelapseSignatureInput) => apiClient<RelapseSignature>(`/v1/psychologist/patients/${patientId}/relapse-signature/${signatureId}`, { method: 'PATCH', body: JSON.stringify(dto) }),
     getMedications: (patientId: string) => apiClient<{ data: Medication[] }>(`/v1/psychologist/patients/${patientId}/medications`),
     createMedication: (patientId: string, dto: Pick<Medication, 'name' | 'dosage' | 'frequency' | 'instructions' | 'startDate' | 'endDate'>) => apiClient<Medication>(`/v1/psychologist/patients/${patientId}/medications`, { method: 'POST', body: JSON.stringify(dto) }),
-    updateMedication: (patientId: string, medicationId: string, dto: Partial<Medication>) => apiClient<Medication>(`/v1/psychologist/patients/${patientId}/medications/${medicationId}`, { method: 'PATCH', body: JSON.stringify(dto) }),
+    updateMedication: (patientId: string, medicationId: string, dto: MedicationInput) => apiClient<Medication>(`/v1/psychologist/patients/${patientId}/medications/${medicationId}`, { method: 'PATCH', body: JSON.stringify(dto) }),
     getTimelineEvents: (patientId: string) => apiClient<{ data: TimelineEvent[] }>(`/v1/psychologist/patients/${patientId}/timeline-events`),
     createTimelineEvent: (patientId: string, dto: { title: string; details?: string; occurredAt: string; medicationId?: string }) => apiClient<TimelineEvent>(`/v1/psychologist/patients/${patientId}/timeline-events`, { method: 'POST', body: JSON.stringify(dto) }),
     reviseDiagnosis: (patientId: string, dto: { diagnosis?: string; diagnosisLabel?: string; status?: string; notes?: string }) => apiClient<{ id: string; diagnosis: string | null; diagnosisLabel: string | null }>(`/v1/psychologist/patients/${patientId}/diagnosis`, { method: 'POST', body: JSON.stringify(dto) }),
